@@ -23,7 +23,6 @@ inputs:
 outputs:
   url:
     description: 'url of the test run results'
-    required: true
 
 runs:
   using: node20
