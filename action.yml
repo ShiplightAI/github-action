@@ -1,0 +1,30 @@
+name: The name of your action here
+description: Provide a description here
+author: Your name or organization here
+
+# Add your action's branding here. This will appear on the GitHub Marketplace.
+branding:
+  icon: heart
+  color: red
+
+# Define your inputs here.
+inputs:
+  api-token:
+    description: 'api token for loggiaai'
+    required: true
+  test-suite-id:
+    description: 'test suite id'
+    required: true
+  test-suite-environment-url:
+    description: 'test suite environment url'
+    required: true
+
+# Define your outputs here.
+outputs:
+  url:
+    description: 'url of the test run results'
+    required: true
+
+runs:
+  using: node20
+  main: dist/index.js
