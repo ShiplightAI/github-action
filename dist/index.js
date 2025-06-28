@@ -1,32 +1,64 @@
-import require$$0$1 from 'os';
-import require$$0$2 from 'crypto';
+import require$$0$2 from 'os';
+import require$$0$3 from 'crypto';
 import require$$1$1 from 'fs';
-import require$$1$6 from 'path';
+import require$$1$5 from 'path';
 import require$$2 from 'http';
 import require$$3 from 'https';
 import require$$0$6 from 'net';
 import require$$1$2 from 'tls';
+import require$$4 from 'events';
 import require$$0$5 from 'assert';
-import require$$0$3 from 'util';
-import require$$0$7 from 'stream';
-import require$$0$4 from 'buffer';
+import require$$0$4 from 'util';
+import Stream from 'stream';
+import require$$7 from 'buffer';
 import require$$8 from 'querystring';
 import require$$14 from 'stream/web';
-import require$$0$9 from 'node:stream';
+import require$$0$8 from 'node:stream';
 import require$$1$3 from 'node:util';
-import require$$0$8 from 'node:events';
-import require$$0$a from 'worker_threads';
+import require$$0$7 from 'node:events';
+import require$$0$9 from 'worker_threads';
 import require$$2$1 from 'perf_hooks';
 import require$$5 from 'util/types';
-import require$$4 from 'async_hooks';
+import require$$4$1 from 'async_hooks';
 import require$$1$4 from 'console';
-import require$$1$5 from 'url';
-import require$$3$1 from 'zlib';
-import require$$0$b from 'diagnostics_channel';
+import Url from 'url';
+import zlib from 'zlib';
+import require$$6 from 'string_decoder';
+import require$$0$a from 'diagnostics_channel';
 import require$$2$2 from 'child_process';
-import require$$6 from 'timers';
+import require$$6$1 from 'timers';
+import require$$0$b from 'punycode';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+function getDefaultExportFromCjs (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
+
+function getAugmentedNamespace(n) {
+  if (Object.prototype.hasOwnProperty.call(n, '__esModule')) return n;
+  var f = n.default;
+	if (typeof f == "function") {
+		var a = function a () {
+			if (this instanceof a) {
+        return Reflect.construct(f, arguments, this.constructor);
+			}
+			return f.apply(this, arguments);
+		};
+		a.prototype = f.prototype;
+  } else a = {};
+  Object.defineProperty(a, '__esModule', {value: true});
+	Object.keys(n).forEach(function (k) {
+		var d = Object.getOwnPropertyDescriptor(n, k);
+		Object.defineProperty(a, k, d.get ? d : {
+			enumerable: true,
+			get: function () {
+				return n[k];
+			}
+		});
+	});
+	return a;
+}
 
 var core$2 = {};
 
@@ -111,7 +143,7 @@ function requireCommand () {
 	};
 	Object.defineProperty(command, "__esModule", { value: true });
 	command.issue = command.issueCommand = void 0;
-	const os = __importStar(require$$0$1);
+	const os = __importStar(require$$0$2);
 	const utils_1 = requireUtils$5();
 	/**
 	 * Commands
@@ -219,9 +251,9 @@ function requireFileCommand () {
 	fileCommand.prepareKeyValueMessage = fileCommand.issueFileCommand = void 0;
 	// We use any as a valid input type
 	/* eslint-disable @typescript-eslint/no-explicit-any */
-	const crypto = __importStar(require$$0$2);
+	const crypto = __importStar(require$$0$3);
 	const fs = __importStar(require$$1$1);
-	const os = __importStar(require$$0$1);
+	const os = __importStar(require$$0$2);
 	const utils_1 = requireUtils$5();
 	function issueFileCommand(command, message) {
 	    const filePath = process.env[`GITHUB_${command}`];
@@ -365,490 +397,6 @@ function requireProxy () {
 
 var tunnel$1 = {};
 
-var events$1 = {exports: {}};
-
-var hasRequiredEvents$1;
-
-function requireEvents$1 () {
-	if (hasRequiredEvents$1) return events$1.exports;
-	hasRequiredEvents$1 = 1;
-
-	var R = typeof Reflect === 'object' ? Reflect : null;
-	var ReflectApply = R && typeof R.apply === 'function'
-	  ? R.apply
-	  : function ReflectApply(target, receiver, args) {
-	    return Function.prototype.apply.call(target, receiver, args);
-	  };
-
-	var ReflectOwnKeys;
-	if (R && typeof R.ownKeys === 'function') {
-	  ReflectOwnKeys = R.ownKeys;
-	} else if (Object.getOwnPropertySymbols) {
-	  ReflectOwnKeys = function ReflectOwnKeys(target) {
-	    return Object.getOwnPropertyNames(target)
-	      .concat(Object.getOwnPropertySymbols(target));
-	  };
-	} else {
-	  ReflectOwnKeys = function ReflectOwnKeys(target) {
-	    return Object.getOwnPropertyNames(target);
-	  };
-	}
-
-	function ProcessEmitWarning(warning) {
-	  if (console && console.warn) console.warn(warning);
-	}
-
-	var NumberIsNaN = Number.isNaN || function NumberIsNaN(value) {
-	  return value !== value;
-	};
-
-	function EventEmitter() {
-	  EventEmitter.init.call(this);
-	}
-	events$1.exports = EventEmitter;
-	events$1.exports.once = once;
-
-	// Backwards-compat with node 0.10.x
-	EventEmitter.EventEmitter = EventEmitter;
-
-	EventEmitter.prototype._events = undefined;
-	EventEmitter.prototype._eventsCount = 0;
-	EventEmitter.prototype._maxListeners = undefined;
-
-	// By default EventEmitters will print a warning if more than 10 listeners are
-	// added to it. This is a useful default which helps finding memory leaks.
-	var defaultMaxListeners = 10;
-
-	function checkListener(listener) {
-	  if (typeof listener !== 'function') {
-	    throw new TypeError('The "listener" argument must be of type Function. Received type ' + typeof listener);
-	  }
-	}
-
-	Object.defineProperty(EventEmitter, 'defaultMaxListeners', {
-	  enumerable: true,
-	  get: function() {
-	    return defaultMaxListeners;
-	  },
-	  set: function(arg) {
-	    if (typeof arg !== 'number' || arg < 0 || NumberIsNaN(arg)) {
-	      throw new RangeError('The value of "defaultMaxListeners" is out of range. It must be a non-negative number. Received ' + arg + '.');
-	    }
-	    defaultMaxListeners = arg;
-	  }
-	});
-
-	EventEmitter.init = function() {
-
-	  if (this._events === undefined ||
-	      this._events === Object.getPrototypeOf(this)._events) {
-	    this._events = Object.create(null);
-	    this._eventsCount = 0;
-	  }
-
-	  this._maxListeners = this._maxListeners || undefined;
-	};
-
-	// Obviously not all Emitters should be limited to 10. This function allows
-	// that to be increased. Set to zero for unlimited.
-	EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
-	  if (typeof n !== 'number' || n < 0 || NumberIsNaN(n)) {
-	    throw new RangeError('The value of "n" is out of range. It must be a non-negative number. Received ' + n + '.');
-	  }
-	  this._maxListeners = n;
-	  return this;
-	};
-
-	function _getMaxListeners(that) {
-	  if (that._maxListeners === undefined)
-	    return EventEmitter.defaultMaxListeners;
-	  return that._maxListeners;
-	}
-
-	EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
-	  return _getMaxListeners(this);
-	};
-
-	EventEmitter.prototype.emit = function emit(type) {
-	  var args = [];
-	  for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
-	  var doError = (type === 'error');
-
-	  var events = this._events;
-	  if (events !== undefined)
-	    doError = (doError && events.error === undefined);
-	  else if (!doError)
-	    return false;
-
-	  // If there is no 'error' event listener then throw.
-	  if (doError) {
-	    var er;
-	    if (args.length > 0)
-	      er = args[0];
-	    if (er instanceof Error) {
-	      // Note: The comments on the `throw` lines are intentional, they show
-	      // up in Node's output if this results in an unhandled exception.
-	      throw er; // Unhandled 'error' event
-	    }
-	    // At least give some kind of context to the user
-	    var err = new Error('Unhandled error.' + (er ? ' (' + er.message + ')' : ''));
-	    err.context = er;
-	    throw err; // Unhandled 'error' event
-	  }
-
-	  var handler = events[type];
-
-	  if (handler === undefined)
-	    return false;
-
-	  if (typeof handler === 'function') {
-	    ReflectApply(handler, this, args);
-	  } else {
-	    var len = handler.length;
-	    var listeners = arrayClone(handler, len);
-	    for (var i = 0; i < len; ++i)
-	      ReflectApply(listeners[i], this, args);
-	  }
-
-	  return true;
-	};
-
-	function _addListener(target, type, listener, prepend) {
-	  var m;
-	  var events;
-	  var existing;
-
-	  checkListener(listener);
-
-	  events = target._events;
-	  if (events === undefined) {
-	    events = target._events = Object.create(null);
-	    target._eventsCount = 0;
-	  } else {
-	    // To avoid recursion in the case that type === "newListener"! Before
-	    // adding it to the listeners, first emit "newListener".
-	    if (events.newListener !== undefined) {
-	      target.emit('newListener', type,
-	                  listener.listener ? listener.listener : listener);
-
-	      // Re-assign `events` because a newListener handler could have caused the
-	      // this._events to be assigned to a new object
-	      events = target._events;
-	    }
-	    existing = events[type];
-	  }
-
-	  if (existing === undefined) {
-	    // Optimize the case of one listener. Don't need the extra array object.
-	    existing = events[type] = listener;
-	    ++target._eventsCount;
-	  } else {
-	    if (typeof existing === 'function') {
-	      // Adding the second element, need to change to array.
-	      existing = events[type] =
-	        prepend ? [listener, existing] : [existing, listener];
-	      // If we've already got an array, just append.
-	    } else if (prepend) {
-	      existing.unshift(listener);
-	    } else {
-	      existing.push(listener);
-	    }
-
-	    // Check for listener leak
-	    m = _getMaxListeners(target);
-	    if (m > 0 && existing.length > m && !existing.warned) {
-	      existing.warned = true;
-	      // No error code for this since it is a Warning
-	      // eslint-disable-next-line no-restricted-syntax
-	      var w = new Error('Possible EventEmitter memory leak detected. ' +
-	                          existing.length + ' ' + String(type) + ' listeners ' +
-	                          'added. Use emitter.setMaxListeners() to ' +
-	                          'increase limit');
-	      w.name = 'MaxListenersExceededWarning';
-	      w.emitter = target;
-	      w.type = type;
-	      w.count = existing.length;
-	      ProcessEmitWarning(w);
-	    }
-	  }
-
-	  return target;
-	}
-
-	EventEmitter.prototype.addListener = function addListener(type, listener) {
-	  return _addListener(this, type, listener, false);
-	};
-
-	EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-
-	EventEmitter.prototype.prependListener =
-	    function prependListener(type, listener) {
-	      return _addListener(this, type, listener, true);
-	    };
-
-	function onceWrapper() {
-	  if (!this.fired) {
-	    this.target.removeListener(this.type, this.wrapFn);
-	    this.fired = true;
-	    if (arguments.length === 0)
-	      return this.listener.call(this.target);
-	    return this.listener.apply(this.target, arguments);
-	  }
-	}
-
-	function _onceWrap(target, type, listener) {
-	  var state = { fired: false, wrapFn: undefined, target: target, type: type, listener: listener };
-	  var wrapped = onceWrapper.bind(state);
-	  wrapped.listener = listener;
-	  state.wrapFn = wrapped;
-	  return wrapped;
-	}
-
-	EventEmitter.prototype.once = function once(type, listener) {
-	  checkListener(listener);
-	  this.on(type, _onceWrap(this, type, listener));
-	  return this;
-	};
-
-	EventEmitter.prototype.prependOnceListener =
-	    function prependOnceListener(type, listener) {
-	      checkListener(listener);
-	      this.prependListener(type, _onceWrap(this, type, listener));
-	      return this;
-	    };
-
-	// Emits a 'removeListener' event if and only if the listener was removed.
-	EventEmitter.prototype.removeListener =
-	    function removeListener(type, listener) {
-	      var list, events, position, i, originalListener;
-
-	      checkListener(listener);
-
-	      events = this._events;
-	      if (events === undefined)
-	        return this;
-
-	      list = events[type];
-	      if (list === undefined)
-	        return this;
-
-	      if (list === listener || list.listener === listener) {
-	        if (--this._eventsCount === 0)
-	          this._events = Object.create(null);
-	        else {
-	          delete events[type];
-	          if (events.removeListener)
-	            this.emit('removeListener', type, list.listener || listener);
-	        }
-	      } else if (typeof list !== 'function') {
-	        position = -1;
-
-	        for (i = list.length - 1; i >= 0; i--) {
-	          if (list[i] === listener || list[i].listener === listener) {
-	            originalListener = list[i].listener;
-	            position = i;
-	            break;
-	          }
-	        }
-
-	        if (position < 0)
-	          return this;
-
-	        if (position === 0)
-	          list.shift();
-	        else {
-	          spliceOne(list, position);
-	        }
-
-	        if (list.length === 1)
-	          events[type] = list[0];
-
-	        if (events.removeListener !== undefined)
-	          this.emit('removeListener', type, originalListener || listener);
-	      }
-
-	      return this;
-	    };
-
-	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-
-	EventEmitter.prototype.removeAllListeners =
-	    function removeAllListeners(type) {
-	      var listeners, events, i;
-
-	      events = this._events;
-	      if (events === undefined)
-	        return this;
-
-	      // not listening for removeListener, no need to emit
-	      if (events.removeListener === undefined) {
-	        if (arguments.length === 0) {
-	          this._events = Object.create(null);
-	          this._eventsCount = 0;
-	        } else if (events[type] !== undefined) {
-	          if (--this._eventsCount === 0)
-	            this._events = Object.create(null);
-	          else
-	            delete events[type];
-	        }
-	        return this;
-	      }
-
-	      // emit removeListener for all listeners on all events
-	      if (arguments.length === 0) {
-	        var keys = Object.keys(events);
-	        var key;
-	        for (i = 0; i < keys.length; ++i) {
-	          key = keys[i];
-	          if (key === 'removeListener') continue;
-	          this.removeAllListeners(key);
-	        }
-	        this.removeAllListeners('removeListener');
-	        this._events = Object.create(null);
-	        this._eventsCount = 0;
-	        return this;
-	      }
-
-	      listeners = events[type];
-
-	      if (typeof listeners === 'function') {
-	        this.removeListener(type, listeners);
-	      } else if (listeners !== undefined) {
-	        // LIFO order
-	        for (i = listeners.length - 1; i >= 0; i--) {
-	          this.removeListener(type, listeners[i]);
-	        }
-	      }
-
-	      return this;
-	    };
-
-	function _listeners(target, type, unwrap) {
-	  var events = target._events;
-
-	  if (events === undefined)
-	    return [];
-
-	  var evlistener = events[type];
-	  if (evlistener === undefined)
-	    return [];
-
-	  if (typeof evlistener === 'function')
-	    return unwrap ? [evlistener.listener || evlistener] : [evlistener];
-
-	  return unwrap ?
-	    unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
-	}
-
-	EventEmitter.prototype.listeners = function listeners(type) {
-	  return _listeners(this, type, true);
-	};
-
-	EventEmitter.prototype.rawListeners = function rawListeners(type) {
-	  return _listeners(this, type, false);
-	};
-
-	EventEmitter.listenerCount = function(emitter, type) {
-	  if (typeof emitter.listenerCount === 'function') {
-	    return emitter.listenerCount(type);
-	  } else {
-	    return listenerCount.call(emitter, type);
-	  }
-	};
-
-	EventEmitter.prototype.listenerCount = listenerCount;
-	function listenerCount(type) {
-	  var events = this._events;
-
-	  if (events !== undefined) {
-	    var evlistener = events[type];
-
-	    if (typeof evlistener === 'function') {
-	      return 1;
-	    } else if (evlistener !== undefined) {
-	      return evlistener.length;
-	    }
-	  }
-
-	  return 0;
-	}
-
-	EventEmitter.prototype.eventNames = function eventNames() {
-	  return this._eventsCount > 0 ? ReflectOwnKeys(this._events) : [];
-	};
-
-	function arrayClone(arr, n) {
-	  var copy = new Array(n);
-	  for (var i = 0; i < n; ++i)
-	    copy[i] = arr[i];
-	  return copy;
-	}
-
-	function spliceOne(list, index) {
-	  for (; index + 1 < list.length; index++)
-	    list[index] = list[index + 1];
-	  list.pop();
-	}
-
-	function unwrapListeners(arr) {
-	  var ret = new Array(arr.length);
-	  for (var i = 0; i < ret.length; ++i) {
-	    ret[i] = arr[i].listener || arr[i];
-	  }
-	  return ret;
-	}
-
-	function once(emitter, name) {
-	  return new Promise(function (resolve, reject) {
-	    function errorListener(err) {
-	      emitter.removeListener(name, resolver);
-	      reject(err);
-	    }
-
-	    function resolver() {
-	      if (typeof emitter.removeListener === 'function') {
-	        emitter.removeListener('error', errorListener);
-	      }
-	      resolve([].slice.call(arguments));
-	    }
-	    eventTargetAgnosticAddListener(emitter, name, resolver, { once: true });
-	    if (name !== 'error') {
-	      addErrorHandlerIfEventEmitter(emitter, errorListener, { once: true });
-	    }
-	  });
-	}
-
-	function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
-	  if (typeof emitter.on === 'function') {
-	    eventTargetAgnosticAddListener(emitter, 'error', handler, flags);
-	  }
-	}
-
-	function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
-	  if (typeof emitter.on === 'function') {
-	    if (flags.once) {
-	      emitter.once(name, listener);
-	    } else {
-	      emitter.on(name, listener);
-	    }
-	  } else if (typeof emitter.addEventListener === 'function') {
-	    // EventTarget does not have `error` event semantics like Node
-	    // EventEmitters, we do not listen for `error` events here.
-	    emitter.addEventListener(name, function wrapListener(arg) {
-	      // IE does not have builtin `{ once: true }` support so we
-	      // have to do it manually.
-	      if (flags.once) {
-	        emitter.removeEventListener(name, wrapListener);
-	      }
-	      listener(arg);
-	    });
-	  } else {
-	    throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
-	  }
-	}
-	return events$1.exports;
-}
-
 var hasRequiredTunnel$1;
 
 function requireTunnel$1 () {
@@ -857,8 +405,8 @@ function requireTunnel$1 () {
 	var tls = require$$1$2;
 	var http = require$$2;
 	var https = require$$3;
-	var events = requireEvents$1();
-	var util = require$$0$3;
+	var events = require$$4;
+	var util = require$$0$4;
 
 
 	tunnel$1.httpOverHttp = httpOverHttp;
@@ -1575,11 +1123,11 @@ function requireUtil$7 () {
 	const assert = require$$0$5;
 	const { kDestroyed, kBodyUsed } = requireSymbols$4();
 	const { IncomingMessage } = require$$2;
-	const stream = require$$0$7;
+	const stream = Stream;
 	const net = require$$0$6;
 	const { InvalidArgumentError } = requireErrors();
-	const { Blob } = require$$0$4;
-	const nodeUtil = require$$0$3;
+	const { Blob } = require$$7;
+	const nodeUtil = require$$0$4;
 	const { stringify } = require$$8;
 	const { headerNameLowerCasedRecord } = requireConstants$7();
 
@@ -2235,7 +1783,7 @@ function requireSbmh () {
 	 * Based heavily on the Streaming Boyer-Moore-Horspool C++ implementation
 	 * by Hongli Lai at: https://github.com/FooBarWidget/boyer-moore-horspool
 	 */
-	const EventEmitter = require$$0$8.EventEmitter;
+	const EventEmitter = require$$0$7.EventEmitter;
 	const inherits = require$$1$3.inherits;
 
 	function SBMH (needle) {
@@ -2446,7 +1994,7 @@ function requirePartStream () {
 	hasRequiredPartStream = 1;
 
 	const inherits = require$$1$3.inherits;
-	const ReadableStream = require$$0$9.Readable;
+	const ReadableStream = require$$0$8.Readable;
 
 	function PartStream (opts) {
 	  ReadableStream.call(this, opts);
@@ -2490,7 +2038,7 @@ function requireHeaderParser () {
 	if (hasRequiredHeaderParser) return HeaderParser_1;
 	hasRequiredHeaderParser = 1;
 
-	const EventEmitter = require$$0$8.EventEmitter;
+	const EventEmitter = require$$0$7.EventEmitter;
 	const inherits = require$$1$3.inherits;
 	const getLimit = requireGetLimit();
 
@@ -2598,7 +2146,7 @@ function requireDicer () {
 	if (hasRequiredDicer) return Dicer_1;
 	hasRequiredDicer = 1;
 
-	const WritableStream = require$$0$9.Writable;
+	const WritableStream = require$$0$8.Writable;
 	const inherits = require$$1$3.inherits;
 
 	const StreamSearch = requireSbmh();
@@ -3175,7 +2723,7 @@ function requireMultipart () {
 	//  * support limits.fieldNameSize
 	//     -- this will require modifications to utils.parseParams
 
-	const { Readable } = require$$0$9;
+	const { Readable } = require$$0$8;
 	const { inherits } = require$$1$3;
 
 	const Dicer = requireDicer();
@@ -3741,7 +3289,7 @@ function requireMain () {
 	if (hasRequiredMain) return main.exports;
 	hasRequiredMain = 1;
 
-	const WritableStream = require$$0$9.Writable;
+	const WritableStream = require$$0$8.Writable;
 	const { inherits } = require$$1$3;
 	const Dicer = requireDicer();
 
@@ -3834,7 +3382,7 @@ function requireConstants$6 () {
 	if (hasRequiredConstants$6) return constants$6;
 	hasRequiredConstants$6 = 1;
 
-	const { MessageChannel, receiveMessageOnPort } = require$$0$a;
+	const { MessageChannel, receiveMessageOnPort } = require$$0$9;
 
 	const corsSafeListedMethods = ['GET', 'HEAD', 'POST'];
 	const corsSafeListedMethodsSet = new Set(corsSafeListedMethods);
@@ -5210,7 +4758,7 @@ function requireWebidl () {
 	if (hasRequiredWebidl) return webidl_1;
 	hasRequiredWebidl = 1;
 
-	const { types } = require$$0$3;
+	const { types } = require$$0$4;
 	const { hasOwn, toUSVString } = requireUtil$6();
 
 	/** @type {import('../../types/webidl').Webidl} */
@@ -5864,7 +5412,7 @@ function requireDataURL () {
 	if (hasRequiredDataURL) return dataURL;
 	hasRequiredDataURL = 1;
 	const assert = require$$0$5;
-	const { atob } = require$$0$4;
+	const { atob } = require$$7;
 	const { isomorphicDecode } = requireUtil$6();
 
 	const encoder = new TextEncoder();
@@ -6500,8 +6048,8 @@ function requireFile () {
 	if (hasRequiredFile) return file;
 	hasRequiredFile = 1;
 
-	const { Blob, File: NativeFile } = require$$0$4;
-	const { types } = require$$0$3;
+	const { Blob, File: NativeFile } = require$$7;
+	const { types } = require$$0$4;
 	const { kState } = requireSymbols$3();
 	const { isBlobLike } = requireUtil$6();
 	const { webidl } = requireWebidl();
@@ -6856,7 +6404,7 @@ function requireFormdata () {
 	const { kState } = requireSymbols$3();
 	const { File: UndiciFile, FileLike, isFileLike } = requireFile();
 	const { webidl } = requireWebidl();
-	const { Blob, File: NativeFile } = require$$0$4;
+	const { Blob, File: NativeFile } = require$$7;
 
 	/** @type {globalThis['File']} */
 	const File = NativeFile ?? UndiciFile;
@@ -7139,7 +6687,7 @@ function requireBody () {
 	const { kState } = requireSymbols$3();
 	const { webidl } = requireWebidl();
 	const { DOMException, structuredClone } = requireConstants$6();
-	const { Blob, File: NativeFile } = require$$0$4;
+	const { Blob, File: NativeFile } = require$$7;
 	const { kBodyUsed } = requireSymbols$4();
 	const assert = require$$0$5;
 	const { isErrored } = requireUtil$7();
@@ -8253,7 +7801,7 @@ function requireDispatcher () {
 	if (hasRequiredDispatcher) return dispatcher;
 	hasRequiredDispatcher = 1;
 
-	const EventEmitter = requireEvents$1();
+	const EventEmitter = require$$4;
 
 	class Dispatcher extends EventEmitter {
 	  dispatch () {
@@ -8988,7 +8536,7 @@ function requireRedirectHandler () {
 	const { kBodyUsed } = requireSymbols$4();
 	const assert = require$$0$5;
 	const { InvalidArgumentError } = requireErrors();
-	const EE = requireEvents$1();
+	const EE = require$$4;
 
 	const redirectableStatusCodes = [300, 301, 302, 303, 307, 308];
 
@@ -9249,7 +8797,7 @@ function requireClient () {
 	const assert = require$$0$5;
 	const net = require$$0$6;
 	const http = require$$2;
-	const { pipeline } = require$$0$7;
+	const { pipeline } = Stream;
 	const util = requireUtil$7();
 	const timers = requireTimers();
 	const Request = requireRequest$2();
@@ -12432,7 +11980,7 @@ function requireReadable () {
 	hasRequiredReadable = 1;
 
 	const assert = require$$0$5;
-	const { Readable } = require$$0$7;
+	const { Readable } = Stream;
 	const { RequestAbortedError, NotSupportedError, InvalidArgumentError } = requireErrors();
 	const util = requireUtil$7();
 	const { ReadableStreamFrom, toUSVString } = requireUtil$7();
@@ -12883,7 +12431,7 @@ function requireApiRequest () {
 	} = requireErrors();
 	const util = requireUtil$7();
 	const { getResolveErrorBodyCallback } = requireUtil$5();
-	const { AsyncResource } = require$$4;
+	const { AsyncResource } = require$$4$1;
 	const { addSignal, removeSignal } = requireAbortSignal();
 
 	class RequestHandler extends AsyncResource {
@@ -13064,7 +12612,7 @@ function requireApiStream () {
 	if (hasRequiredApiStream) return apiStream;
 	hasRequiredApiStream = 1;
 
-	const { finished, PassThrough } = require$$0$7;
+	const { finished, PassThrough } = Stream;
 	const {
 	  InvalidArgumentError,
 	  InvalidReturnValueError,
@@ -13072,7 +12620,7 @@ function requireApiStream () {
 	} = requireErrors();
 	const util = requireUtil$7();
 	const { getResolveErrorBodyCallback } = requireUtil$5();
-	const { AsyncResource } = require$$4;
+	const { AsyncResource } = require$$4$1;
 	const { addSignal, removeSignal } = requireAbortSignal();
 
 	class StreamHandler extends AsyncResource {
@@ -13296,14 +12844,14 @@ function requireApiPipeline () {
 	  Readable,
 	  Duplex,
 	  PassThrough
-	} = require$$0$7;
+	} = Stream;
 	const {
 	  InvalidArgumentError,
 	  InvalidReturnValueError,
 	  RequestAbortedError
 	} = requireErrors();
 	const util = requireUtil$7();
-	const { AsyncResource } = require$$4;
+	const { AsyncResource } = require$$4$1;
 	const { addSignal, removeSignal } = requireAbortSignal();
 	const assert = require$$0$5;
 
@@ -13550,7 +13098,7 @@ function requireApiUpgrade () {
 	hasRequiredApiUpgrade = 1;
 
 	const { InvalidArgumentError, RequestAbortedError, SocketError } = requireErrors();
-	const { AsyncResource } = require$$4;
+	const { AsyncResource } = require$$4$1;
 	const util = requireUtil$7();
 	const { addSignal, removeSignal } = requireAbortSignal();
 	const assert = require$$0$5;
@@ -13662,7 +13210,7 @@ function requireApiConnect () {
 	if (hasRequiredApiConnect) return apiConnect;
 	hasRequiredApiConnect = 1;
 
-	const { AsyncResource } = require$$4;
+	const { AsyncResource } = require$$4$1;
 	const { InvalidArgumentError, RequestAbortedError, SocketError } = requireErrors();
 	const util = requireUtil$7();
 	const { addSignal, removeSignal } = requireAbortSignal();
@@ -13858,7 +13406,7 @@ function requireMockUtils () {
 	  types: {
 	    isPromise
 	  }
-	} = require$$0$3;
+	} = require$$0$4;
 
 	function matchValue (match, value) {
 	  if (typeof match === 'string') {
@@ -14418,7 +13966,7 @@ function requireMockClient () {
 	if (hasRequiredMockClient) return mockClient;
 	hasRequiredMockClient = 1;
 
-	const { promisify } = require$$0$3;
+	const { promisify } = require$$0$4;
 	const Client = requireClient();
 	const { buildMockDispatch } = requireMockUtils();
 	const {
@@ -14485,7 +14033,7 @@ function requireMockPool () {
 	if (hasRequiredMockPool) return mockPool;
 	hasRequiredMockPool = 1;
 
-	const { promisify } = require$$0$3;
+	const { promisify } = require$$0$4;
 	const Pool = requirePool();
 	const { buildMockDispatch } = requireMockUtils();
 	const {
@@ -14589,7 +14137,7 @@ function requirePendingInterceptorsFormatter () {
 	if (hasRequiredPendingInterceptorsFormatter) return pendingInterceptorsFormatter;
 	hasRequiredPendingInterceptorsFormatter = 1;
 
-	const { Transform } = require$$0$7;
+	const { Transform } = Stream;
 	const { Console } = require$$1$4;
 
 	/**
@@ -14817,7 +14365,7 @@ function requireProxyAgent () {
 	hasRequiredProxyAgent = 1;
 
 	const { kProxy, kClose, kDestroy, kInterceptors } = requireSymbols$4();
-	const { URL } = require$$1$5;
+	const { URL } = Url;
 	const Agent = requireAgent();
 	const Pool = requirePool();
 	const DispatcherBase = requireDispatcherBase();
@@ -15449,7 +14997,7 @@ function requireHeaders$1 () {
 	  isValidHeaderName,
 	  isValidHeaderValue
 	} = requireUtil$6();
-	const util = require$$0$3;
+	const util = require$$0$4;
 	const { webidl } = requireWebidl();
 	const assert = require$$0$5;
 
@@ -16058,7 +15606,7 @@ function requireResponse () {
 	const { URLSerializer } = requireDataURL();
 	const { kHeadersList, kConstruct } = requireSymbols$4();
 	const assert = require$$0$5;
-	const { types } = require$$0$3;
+	const { types } = require$$0$4;
 
 	const ReadableStream = globalThis.ReadableStream || require$$14.ReadableStream;
 	const textEncoder = new TextEncoder('utf-8');
@@ -16642,7 +16190,7 @@ function requireRequest$1 () {
 	const { URLSerializer } = requireDataURL();
 	const { kHeadersList, kConstruct } = requireSymbols$4();
 	const assert = require$$0$5;
-	const { getMaxListeners, setMaxListeners, getEventListeners, defaultMaxListeners } = requireEvents$1();
+	const { getMaxListeners, setMaxListeners, getEventListeners, defaultMaxListeners } = require$$4;
 
 	let TransformStream = globalThis.TransformStream;
 
@@ -17575,7 +17123,7 @@ function requireFetch$1 () {
 	} = requireResponse();
 	const { Headers } = requireHeaders$1();
 	const { Request, makeRequest } = requireRequest$1();
-	const zlib = require$$3$1;
+	const zlib$1 = zlib;
 	const {
 	  bytesMatch,
 	  makePolicyContainer,
@@ -17618,8 +17166,8 @@ function requireFetch$1 () {
 	  DOMException
 	} = requireConstants$6();
 	const { kHeadersList } = requireSymbols$4();
-	const EE = requireEvents$1();
-	const { Readable, pipeline } = require$$0$7;
+	const EE = require$$4;
+	const { Readable, pipeline } = Stream;
 	const { addAbortListener, isErrored, isReadable, nodeMajor, nodeMinor } = requireUtil$7();
 	const { dataURLProcessor, serializeAMimeType } = requireDataURL();
 	const { TransformStream } = require$$14;
@@ -18352,7 +17900,7 @@ function requireFetch$1 () {
 	    }
 	    case 'blob:': {
 	      if (!resolveObjectURL) {
-	        resolveObjectURL = require$$0$4.resolveObjectURL;
+	        resolveObjectURL = require$$7.resolveObjectURL;
 	      }
 
 	      // 1. Let blobURLEntry be request’s current URL’s blob URL entry.
@@ -19526,18 +19074,18 @@ function requireFetch$1 () {
 	            for (const coding of codings) {
 	              // https://www.rfc-editor.org/rfc/rfc9112.html#section-7.2
 	              if (coding === 'x-gzip' || coding === 'gzip') {
-	                decoders.push(zlib.createGunzip({
+	                decoders.push(zlib$1.createGunzip({
 	                  // Be less strict when decoding compressed responses, since sometimes
 	                  // servers send slightly invalid responses that are still accepted
 	                  // by common browsers.
 	                  // Always using Z_SYNC_FLUSH is what cURL does.
-	                  flush: zlib.constants.Z_SYNC_FLUSH,
-	                  finishFlush: zlib.constants.Z_SYNC_FLUSH
+	                  flush: zlib$1.constants.Z_SYNC_FLUSH,
+	                  finishFlush: zlib$1.constants.Z_SYNC_FLUSH
 	                }));
 	              } else if (coding === 'deflate') {
-	                decoders.push(zlib.createInflate());
+	                decoders.push(zlib$1.createInflate());
 	              } else if (coding === 'br') {
-	                decoders.push(zlib.createBrotliDecompress());
+	                decoders.push(zlib$1.createBrotliDecompress());
 	              } else {
 	                decoders.length = 0;
 	                break
@@ -20041,367 +19589,6 @@ function requireEncoding () {
 	return encoding;
 }
 
-var string_decoder = {};
-
-var safeBuffer = {exports: {}};
-
-/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
-
-var hasRequiredSafeBuffer;
-
-function requireSafeBuffer () {
-	if (hasRequiredSafeBuffer) return safeBuffer.exports;
-	hasRequiredSafeBuffer = 1;
-	(function (module, exports) {
-		/* eslint-disable node/no-deprecated-api */
-		var buffer = require$$0$4;
-		var Buffer = buffer.Buffer;
-
-		// alternative to using Object.keys for old browsers
-		function copyProps (src, dst) {
-		  for (var key in src) {
-		    dst[key] = src[key];
-		  }
-		}
-		if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
-		  module.exports = buffer;
-		} else {
-		  // Copy properties from require('buffer')
-		  copyProps(buffer, exports);
-		  exports.Buffer = SafeBuffer;
-		}
-
-		function SafeBuffer (arg, encodingOrOffset, length) {
-		  return Buffer(arg, encodingOrOffset, length)
-		}
-
-		SafeBuffer.prototype = Object.create(Buffer.prototype);
-
-		// Copy static methods from Buffer
-		copyProps(Buffer, SafeBuffer);
-
-		SafeBuffer.from = function (arg, encodingOrOffset, length) {
-		  if (typeof arg === 'number') {
-		    throw new TypeError('Argument must not be a number')
-		  }
-		  return Buffer(arg, encodingOrOffset, length)
-		};
-
-		SafeBuffer.alloc = function (size, fill, encoding) {
-		  if (typeof size !== 'number') {
-		    throw new TypeError('Argument must be a number')
-		  }
-		  var buf = Buffer(size);
-		  if (fill !== undefined) {
-		    if (typeof encoding === 'string') {
-		      buf.fill(fill, encoding);
-		    } else {
-		      buf.fill(fill);
-		    }
-		  } else {
-		    buf.fill(0);
-		  }
-		  return buf
-		};
-
-		SafeBuffer.allocUnsafe = function (size) {
-		  if (typeof size !== 'number') {
-		    throw new TypeError('Argument must be a number')
-		  }
-		  return Buffer(size)
-		};
-
-		SafeBuffer.allocUnsafeSlow = function (size) {
-		  if (typeof size !== 'number') {
-		    throw new TypeError('Argument must be a number')
-		  }
-		  return buffer.SlowBuffer(size)
-		}; 
-	} (safeBuffer, safeBuffer.exports));
-	return safeBuffer.exports;
-}
-
-var hasRequiredString_decoder;
-
-function requireString_decoder () {
-	if (hasRequiredString_decoder) return string_decoder;
-	hasRequiredString_decoder = 1;
-
-	/*<replacement>*/
-
-	var Buffer = requireSafeBuffer().Buffer;
-	/*</replacement>*/
-
-	var isEncoding = Buffer.isEncoding || function (encoding) {
-	  encoding = '' + encoding;
-	  switch (encoding && encoding.toLowerCase()) {
-	    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
-	      return true;
-	    default:
-	      return false;
-	  }
-	};
-
-	function _normalizeEncoding(enc) {
-	  if (!enc) return 'utf8';
-	  var retried;
-	  while (true) {
-	    switch (enc) {
-	      case 'utf8':
-	      case 'utf-8':
-	        return 'utf8';
-	      case 'ucs2':
-	      case 'ucs-2':
-	      case 'utf16le':
-	      case 'utf-16le':
-	        return 'utf16le';
-	      case 'latin1':
-	      case 'binary':
-	        return 'latin1';
-	      case 'base64':
-	      case 'ascii':
-	      case 'hex':
-	        return enc;
-	      default:
-	        if (retried) return; // undefined
-	        enc = ('' + enc).toLowerCase();
-	        retried = true;
-	    }
-	  }
-	}
-	// Do not cache `Buffer.isEncoding` when checking encoding names as some
-	// modules monkey-patch it to support additional encodings
-	function normalizeEncoding(enc) {
-	  var nenc = _normalizeEncoding(enc);
-	  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
-	  return nenc || enc;
-	}
-
-	// StringDecoder provides an interface for efficiently splitting a series of
-	// buffers into a series of JS strings without breaking apart multi-byte
-	// characters.
-	string_decoder.StringDecoder = StringDecoder;
-	function StringDecoder(encoding) {
-	  this.encoding = normalizeEncoding(encoding);
-	  var nb;
-	  switch (this.encoding) {
-	    case 'utf16le':
-	      this.text = utf16Text;
-	      this.end = utf16End;
-	      nb = 4;
-	      break;
-	    case 'utf8':
-	      this.fillLast = utf8FillLast;
-	      nb = 4;
-	      break;
-	    case 'base64':
-	      this.text = base64Text;
-	      this.end = base64End;
-	      nb = 3;
-	      break;
-	    default:
-	      this.write = simpleWrite;
-	      this.end = simpleEnd;
-	      return;
-	  }
-	  this.lastNeed = 0;
-	  this.lastTotal = 0;
-	  this.lastChar = Buffer.allocUnsafe(nb);
-	}
-
-	StringDecoder.prototype.write = function (buf) {
-	  if (buf.length === 0) return '';
-	  var r;
-	  var i;
-	  if (this.lastNeed) {
-	    r = this.fillLast(buf);
-	    if (r === undefined) return '';
-	    i = this.lastNeed;
-	    this.lastNeed = 0;
-	  } else {
-	    i = 0;
-	  }
-	  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
-	  return r || '';
-	};
-
-	StringDecoder.prototype.end = utf8End;
-
-	// Returns only complete characters in a Buffer
-	StringDecoder.prototype.text = utf8Text;
-
-	// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
-	StringDecoder.prototype.fillLast = function (buf) {
-	  if (this.lastNeed <= buf.length) {
-	    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
-	    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
-	  }
-	  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
-	  this.lastNeed -= buf.length;
-	};
-
-	// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
-	// continuation byte. If an invalid byte is detected, -2 is returned.
-	function utf8CheckByte(byte) {
-	  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
-	  return byte >> 6 === 0x02 ? -1 : -2;
-	}
-
-	// Checks at most 3 bytes at the end of a Buffer in order to detect an
-	// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
-	// needed to complete the UTF-8 character (if applicable) are returned.
-	function utf8CheckIncomplete(self, buf, i) {
-	  var j = buf.length - 1;
-	  if (j < i) return 0;
-	  var nb = utf8CheckByte(buf[j]);
-	  if (nb >= 0) {
-	    if (nb > 0) self.lastNeed = nb - 1;
-	    return nb;
-	  }
-	  if (--j < i || nb === -2) return 0;
-	  nb = utf8CheckByte(buf[j]);
-	  if (nb >= 0) {
-	    if (nb > 0) self.lastNeed = nb - 2;
-	    return nb;
-	  }
-	  if (--j < i || nb === -2) return 0;
-	  nb = utf8CheckByte(buf[j]);
-	  if (nb >= 0) {
-	    if (nb > 0) {
-	      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
-	    }
-	    return nb;
-	  }
-	  return 0;
-	}
-
-	// Validates as many continuation bytes for a multi-byte UTF-8 character as
-	// needed or are available. If we see a non-continuation byte where we expect
-	// one, we "replace" the validated continuation bytes we've seen so far with
-	// a single UTF-8 replacement character ('\ufffd'), to match v8's UTF-8 decoding
-	// behavior. The continuation byte check is included three times in the case
-	// where all of the continuation bytes for a character exist in the same buffer.
-	// It is also done this way as a slight performance increase instead of using a
-	// loop.
-	function utf8CheckExtraBytes(self, buf, p) {
-	  if ((buf[0] & 0xC0) !== 0x80) {
-	    self.lastNeed = 0;
-	    return '\ufffd';
-	  }
-	  if (self.lastNeed > 1 && buf.length > 1) {
-	    if ((buf[1] & 0xC0) !== 0x80) {
-	      self.lastNeed = 1;
-	      return '\ufffd';
-	    }
-	    if (self.lastNeed > 2 && buf.length > 2) {
-	      if ((buf[2] & 0xC0) !== 0x80) {
-	        self.lastNeed = 2;
-	        return '\ufffd';
-	      }
-	    }
-	  }
-	}
-
-	// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
-	function utf8FillLast(buf) {
-	  var p = this.lastTotal - this.lastNeed;
-	  var r = utf8CheckExtraBytes(this, buf);
-	  if (r !== undefined) return r;
-	  if (this.lastNeed <= buf.length) {
-	    buf.copy(this.lastChar, p, 0, this.lastNeed);
-	    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
-	  }
-	  buf.copy(this.lastChar, p, 0, buf.length);
-	  this.lastNeed -= buf.length;
-	}
-
-	// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
-	// partial character, the character's bytes are buffered until the required
-	// number of bytes are available.
-	function utf8Text(buf, i) {
-	  var total = utf8CheckIncomplete(this, buf, i);
-	  if (!this.lastNeed) return buf.toString('utf8', i);
-	  this.lastTotal = total;
-	  var end = buf.length - (total - this.lastNeed);
-	  buf.copy(this.lastChar, 0, end);
-	  return buf.toString('utf8', i, end);
-	}
-
-	// For UTF-8, a replacement character is added when ending on a partial
-	// character.
-	function utf8End(buf) {
-	  var r = buf && buf.length ? this.write(buf) : '';
-	  if (this.lastNeed) return r + '\ufffd';
-	  return r;
-	}
-
-	// UTF-16LE typically needs two bytes per character, but even if we have an even
-	// number of bytes available, we need to check if we end on a leading/high
-	// surrogate. In that case, we need to wait for the next two bytes in order to
-	// decode the last character properly.
-	function utf16Text(buf, i) {
-	  if ((buf.length - i) % 2 === 0) {
-	    var r = buf.toString('utf16le', i);
-	    if (r) {
-	      var c = r.charCodeAt(r.length - 1);
-	      if (c >= 0xD800 && c <= 0xDBFF) {
-	        this.lastNeed = 2;
-	        this.lastTotal = 4;
-	        this.lastChar[0] = buf[buf.length - 2];
-	        this.lastChar[1] = buf[buf.length - 1];
-	        return r.slice(0, -1);
-	      }
-	    }
-	    return r;
-	  }
-	  this.lastNeed = 1;
-	  this.lastTotal = 2;
-	  this.lastChar[0] = buf[buf.length - 1];
-	  return buf.toString('utf16le', i, buf.length - 1);
-	}
-
-	// For UTF-16LE we do not explicitly append special replacement characters if we
-	// end on a partial character, we simply let v8 handle that.
-	function utf16End(buf) {
-	  var r = buf && buf.length ? this.write(buf) : '';
-	  if (this.lastNeed) {
-	    var end = this.lastTotal - this.lastNeed;
-	    return r + this.lastChar.toString('utf16le', 0, end);
-	  }
-	  return r;
-	}
-
-	function base64Text(buf, i) {
-	  var n = (buf.length - i) % 3;
-	  if (n === 0) return buf.toString('base64', i);
-	  this.lastNeed = 3 - n;
-	  this.lastTotal = 3;
-	  if (n === 1) {
-	    this.lastChar[0] = buf[buf.length - 1];
-	  } else {
-	    this.lastChar[0] = buf[buf.length - 2];
-	    this.lastChar[1] = buf[buf.length - 1];
-	  }
-	  return buf.toString('base64', i, buf.length - n);
-	}
-
-	function base64End(buf) {
-	  var r = buf && buf.length ? this.write(buf) : '';
-	  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
-	  return r;
-	}
-
-	// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
-	function simpleWrite(buf) {
-	  return buf.toString(this.encoding);
-	}
-
-	function simpleEnd(buf) {
-	  return buf && buf.length ? this.write(buf) : '';
-	}
-	return string_decoder;
-}
-
 var util$4;
 var hasRequiredUtil$4;
 
@@ -20420,9 +19607,9 @@ function requireUtil$4 () {
 	const { getEncoding } = requireEncoding();
 	const { DOMException } = requireConstants$6();
 	const { serializeAMimeType, parseMIMEType } = requireDataURL();
-	const { types } = require$$0$3;
-	const { StringDecoder } = requireString_decoder();
-	const { btoa } = require$$0$4;
+	const { types } = require$$0$4;
+	const { StringDecoder } = require$$6;
+	const { btoa } = require$$7;
 
 	/** @type {PropertyDescriptor} */
 	const staticPropertyDescriptors = {
@@ -23128,7 +22315,7 @@ function requireEvents () {
 
 	const { webidl } = requireWebidl();
 	const { kEnumerableProperty } = requireUtil$7();
-	const { MessagePort } = require$$0$a;
+	const { MessagePort } = require$$0$9;
 
 	/**
 	 * @see https://html.spec.whatwg.org/multipage/comms.html#messageevent
@@ -23645,7 +22832,7 @@ function requireConnection () {
 	if (hasRequiredConnection) return connection;
 	hasRequiredConnection = 1;
 
-	const diagnosticsChannel = require$$0$b;
+	const diagnosticsChannel = require$$0$a;
 	const { uid, states } = requireConstants$3();
 	const {
 	  kReadyState,
@@ -24025,8 +23212,8 @@ function requireReceiver () {
 	if (hasRequiredReceiver) return receiver;
 	hasRequiredReceiver = 1;
 
-	const { Writable } = require$$0$7;
-	const diagnosticsChannel = require$$0$b;
+	const { Writable } = Stream;
+	const diagnosticsChannel = require$$0$a;
 	const { parserStates, opcodes, states, emptyBuffer } = requireConstants$3();
 	const { kReadyState, kSentClose, kResponse, kReceivedClose } = requireSymbols();
 	const { isValidStatusCode, failWebsocketConnection, websocketMessageReceived } = requireUtil$1();
@@ -24397,7 +23584,7 @@ function requireWebsocket () {
 	const { ByteParser } = requireReceiver();
 	const { kEnumerableProperty, isBlobLike } = requireUtil$7();
 	const { getGlobalDispatcher } = requireGlobal$1();
-	const { types } = require$$0$3;
+	const { types } = require$$0$4;
 
 	let experimentalWarned = false;
 
@@ -25190,11 +24377,11 @@ function requireUndici () {
 	return undici;
 }
 
-var hasRequiredLib$t;
+var hasRequiredLib$s;
 
-function requireLib$t () {
-	if (hasRequiredLib$t) return lib$t;
-	hasRequiredLib$t = 1;
+function requireLib$s () {
+	if (hasRequiredLib$s) return lib$t;
+	hasRequiredLib$s = 1;
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	var __createBinding = (lib$t && lib$t.__createBinding) || (Object.create ? (function(o, m, k, k2) {
 	    if (k2 === undefined) k2 = k;
@@ -25955,7 +25142,7 @@ function requireOidcUtils () {
 	};
 	Object.defineProperty(oidcUtils, "__esModule", { value: true });
 	oidcUtils.OidcClient = void 0;
-	const http_client_1 = requireLib$t();
+	const http_client_1 = requireLib$s();
 	const auth_1 = requireAuth();
 	const core_1 = requireCore$2();
 	class OidcClient {
@@ -26042,7 +25229,7 @@ function requireSummary () {
 		};
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.summary = exports.markdownSummary = exports.SUMMARY_DOCS_URL = exports.SUMMARY_ENV_VAR = void 0;
-		const os_1 = require$$0$1;
+		const os_1 = require$$0$2;
 		const fs_1 = require$$1$1;
 		const { access, appendFile, writeFile } = fs_1.promises;
 		exports.SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY';
@@ -26349,7 +25536,7 @@ function requirePathUtils () {
 	};
 	Object.defineProperty(pathUtils, "__esModule", { value: true });
 	pathUtils.toPlatformPath = pathUtils.toWin32Path = pathUtils.toPosixPath = void 0;
-	const path = __importStar(require$$1$6);
+	const path = __importStar(require$$1$5);
 	/**
 	 * toPosixPath converts the given path to the posix form. On Windows, \\ will be
 	 * replaced with /.
@@ -26436,7 +25623,7 @@ function requireIoUtil () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
 		const fs = __importStar(require$$1$1);
-		const path = __importStar(require$$1$6);
+		const path = __importStar(require$$1$5);
 		_a = fs.promises
 		// export const {open} = 'fs'
 		, exports.chmod = _a.chmod, exports.copyFile = _a.copyFile, exports.lstat = _a.lstat, exports.mkdir = _a.mkdir, exports.open = _a.open, exports.readdir = _a.readdir, exports.readlink = _a.readlink, exports.rename = _a.rename, exports.rm = _a.rm, exports.rmdir = _a.rmdir, exports.stat = _a.stat, exports.symlink = _a.symlink, exports.unlink = _a.unlink;
@@ -26626,7 +25813,7 @@ function requireIo () {
 	Object.defineProperty(io, "__esModule", { value: true });
 	io.findInPath = io.which = io.mkdirP = io.rmRF = io.mv = io.cp = void 0;
 	const assert_1 = require$$0$5;
-	const path = __importStar(require$$1$6);
+	const path = __importStar(require$$1$5);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
 	 * Copies a file or folder.
@@ -26931,13 +26118,13 @@ function requireToolrunner () {
 	};
 	Object.defineProperty(toolrunner, "__esModule", { value: true });
 	toolrunner.argStringToArray = toolrunner.ToolRunner = void 0;
-	const os = __importStar(require$$0$1);
-	const events = __importStar(requireEvents$1());
+	const os = __importStar(require$$0$2);
+	const events = __importStar(require$$4);
 	const child = __importStar(require$$2$2);
-	const path = __importStar(require$$1$6);
+	const path = __importStar(require$$1$5);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
-	const timers_1 = require$$6;
+	const timers_1 = require$$6$1;
 	/* eslint-disable @typescript-eslint/unbound-method */
 	const IS_WINDOWS = process.platform === 'win32';
 	/*
@@ -27556,7 +26743,7 @@ function requireExec () {
 	};
 	Object.defineProperty(exec, "__esModule", { value: true });
 	exec.getExecOutput = exec.exec = void 0;
-	const string_decoder_1 = requireString_decoder();
+	const string_decoder_1 = require$$6;
 	const tr = __importStar(requireToolrunner());
 	/**
 	 * Exec a command.
@@ -27674,7 +26861,7 @@ function requirePlatform () {
 		};
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getDetails = exports.isLinux = exports.isMacOS = exports.isWindows = exports.arch = exports.platform = void 0;
-		const os_1 = __importDefault(require$$0$1);
+		const os_1 = __importDefault(require$$0$2);
 		const exec = __importStar(requireExec());
 		const getWindowsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
 		    const { stdout: version } = yield exec.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', undefined, {
@@ -27777,8 +26964,8 @@ function requireCore$2 () {
 		const command_1 = requireCommand();
 		const file_command_1 = requireFileCommand();
 		const utils_1 = requireUtils$5();
-		const os = __importStar(require$$0$1);
-		const path = __importStar(require$$1$6);
+		const os = __importStar(require$$0$2);
+		const path = __importStar(require$$1$5);
 		const oidc_utils_1 = requireOidcUtils();
 		/**
 		 * The code to exit an action
@@ -28619,11 +27806,11 @@ function requireTypings () {
 	return typings;
 }
 
-var hasRequiredLib$s;
+var hasRequiredLib$r;
 
-function requireLib$s () {
-	if (hasRequiredLib$s) return lib$q;
-	hasRequiredLib$s = 1;
+function requireLib$r () {
+	if (hasRequiredLib$r) return lib$q;
+	hasRequiredLib$r = 1;
 	(function (exports) {
 		var __createBinding = (lib$q && lib$q.__createBinding) || (Object.create ? (function(o, m, k, k2) {
 		    if (k2 === undefined) k2 = k;
@@ -28800,7 +27987,7 @@ function requireUtils$3 () {
 	(function (exports) {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.diffMonth = exports.getDiff = exports.getZone = exports.padStart = exports.getFormats = exports.resolve = exports.parse = void 0;
-		const is_1 = requireLib$s();
+		const is_1 = requireLib$r();
 		const constants_1 = requireConstants$1();
 		const parse = (date) => {
 		    // undefine or no data
@@ -28941,11 +28128,11 @@ function requireUtils$3 () {
 	return utils$3;
 }
 
-var hasRequiredLib$r;
+var hasRequiredLib$q;
 
-function requireLib$r () {
-	if (hasRequiredLib$r) return lib$r;
-	hasRequiredLib$r = 1;
+function requireLib$q () {
+	if (hasRequiredLib$q) return lib$r;
+	hasRequiredLib$q = 1;
 	(function (exports) {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.Moment = exports.moment = void 0;
@@ -29240,7 +28427,7 @@ function requireGet$1 () {
 	Object.defineProperty(get$1, "__esModule", { value: true });
 	get$1.get = void 0;
 	const to_path_1 = requireToPath();
-	const is_1 = requireLib$s();
+	const is_1 = requireLib$r();
 	/**
 	 * Get the value at path of object.
 	 * If the resolved values is undefined, the defaultValue is returnted in its place.
@@ -29338,7 +28525,7 @@ function requireLogger$2 () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getLogger = exports.Logger = exports.LogLevel = void 0;
 		const onion_1 = requireOnion();
-		const moment_1 = requireLib$r();
+		const moment_1 = requireLib$q();
 		const format_1 = requireFormat$1();
 		// message queue to cache logs
 		// default length 1000
@@ -29680,7 +28867,7 @@ function requireLogger () {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.getLogger = exports.Logger = exports.LogLevel = void 0;
 		const onion_1 = requireOnion();
-		const moment_1 = requireLib$r();
+		const moment_1 = requireLib$q();
 		const format_1 = requireFormat$1();
 		var LogLevel;
 		(function (LogLevel) {
@@ -29922,11 +29109,11 @@ function requireLogger () {
 	return logger;
 }
 
-var hasRequiredLib$q;
+var hasRequiredLib$p;
 
-function requireLib$q () {
-	if (hasRequiredLib$q) return lib$p;
-	hasRequiredLib$q = 1;
+function requireLib$p () {
+	if (hasRequiredLib$p) return lib$p;
+	hasRequiredLib$p = 1;
 	Object.defineProperty(lib$p, "__esModule", { value: true });
 	lib$p.debug = void 0;
 	const logger_1 = requireLogger();
@@ -29949,7 +29136,7 @@ function requireDebug () {
 	if (hasRequiredDebug) return debug;
 	hasRequiredDebug = 1;
 	Object.defineProperty(debug, "__esModule", { value: true });
-	const debug_1 = requireLib$q();
+	const debug_1 = requireLib$p();
 	debug.default = debug_1.default;
 	return debug;
 }
@@ -30016,7 +29203,7 @@ var userAgent = {};
 var name = "@zcorky/fz";
 var version = "1.2.15";
 var repository = "https://github.com/zcorky/fz";
-var require$$0 = {
+var require$$0$1 = {
 	name: name,
 	version: version,
 	repository: repository};
@@ -30027,7 +29214,7 @@ function requireUserAgent () {
 	if (hasRequiredUserAgent) return userAgent;
 	hasRequiredUserAgent = 1;
 	Object.defineProperty(userAgent, "__esModule", { value: true });
-	const pkg = require$$0;
+	const pkg = require$$0$1;
 	const { name, version, repository } = pkg;
 	const userAgentName = name.replace('@', '').split('/').map(e => `${e[0].toUpperCase()}${e.slice(1)}`)[1];
 	function userAgent$1() {
@@ -30107,25 +29294,23 @@ function requireHeaders () {
 	return headers;
 }
 
-var fetch$1 = {};
+var fetch$2 = {};
 
 var fetchNpmNode = {exports: {}};
 
-var lib$n = {exports: {}};
-
 var publicApi = {};
 
-var URL$1 = {exports: {}};
+var URL$2 = {exports: {}};
 
-var lib$m;
-var hasRequiredLib$p;
+var lib$n;
+var hasRequiredLib$o;
 
-function requireLib$p () {
-	if (hasRequiredLib$p) return lib$m;
-	hasRequiredLib$p = 1;
+function requireLib$o () {
+	if (hasRequiredLib$o) return lib$n;
+	hasRequiredLib$o = 1;
 
 	var conversions = {};
-	lib$m = conversions;
+	lib$n = conversions;
 
 	function sign(x) {
 	    return x < 0 ? -1 : 1;
@@ -30311,7 +29496,7 @@ function requireLib$p () {
 
 	    return V;
 	};
-	return lib$m;
+	return lib$n;
 }
 
 var utils$1 = {exports: {}};
@@ -30347,457 +29532,6 @@ function requireUtils$2 () {
 var URLImpl = {};
 
 var urlStateMachine = {exports: {}};
-
-var punycode_1;
-var hasRequiredPunycode;
-
-function requirePunycode () {
-	if (hasRequiredPunycode) return punycode_1;
-	hasRequiredPunycode = 1;
-
-	/** Highest positive signed 32-bit float value */
-	const maxInt = 2147483647; // aka. 0x7FFFFFFF or 2^31-1
-
-	/** Bootstring parameters */
-	const base = 36;
-	const tMin = 1;
-	const tMax = 26;
-	const skew = 38;
-	const damp = 700;
-	const initialBias = 72;
-	const initialN = 128; // 0x80
-	const delimiter = '-'; // '\x2D'
-
-	/** Regular expressions */
-	const regexPunycode = /^xn--/;
-	const regexNonASCII = /[^\0-\x7F]/; // Note: U+007F DEL is excluded too.
-	const regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g; // RFC 3490 separators
-
-	/** Error messages */
-	const errors = {
-		'overflow': 'Overflow: input needs wider integers to process',
-		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
-		'invalid-input': 'Invalid input'
-	};
-
-	/** Convenience shortcuts */
-	const baseMinusTMin = base - tMin;
-	const floor = Math.floor;
-	const stringFromCharCode = String.fromCharCode;
-
-	/*--------------------------------------------------------------------------*/
-
-	/**
-	 * A generic error utility function.
-	 * @private
-	 * @param {String} type The error type.
-	 * @returns {Error} Throws a `RangeError` with the applicable error message.
-	 */
-	function error(type) {
-		throw new RangeError(errors[type]);
-	}
-
-	/**
-	 * A generic `Array#map` utility function.
-	 * @private
-	 * @param {Array} array The array to iterate over.
-	 * @param {Function} callback The function that gets called for every array
-	 * item.
-	 * @returns {Array} A new array of values returned by the callback function.
-	 */
-	function map(array, callback) {
-		const result = [];
-		let length = array.length;
-		while (length--) {
-			result[length] = callback(array[length]);
-		}
-		return result;
-	}
-
-	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
-	 * @private
-	 * @param {String} domain The domain name or email address.
-	 * @param {Function} callback The function that gets called for every
-	 * character.
-	 * @returns {String} A new string of characters returned by the callback
-	 * function.
-	 */
-	function mapDomain(domain, callback) {
-		const parts = domain.split('@');
-		let result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			domain = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		domain = domain.replace(regexSeparators, '\x2E');
-		const labels = domain.split('.');
-		const encoded = map(labels, callback).join('.');
-		return result + encoded;
-	}
-
-	/**
-	 * Creates an array containing the numeric code points of each Unicode
-	 * character in the string. While JavaScript uses UCS-2 internally,
-	 * this function will convert a pair of surrogate halves (each of which
-	 * UCS-2 exposes as separate characters) into a single code point,
-	 * matching UTF-16.
-	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-	 * @memberOf punycode.ucs2
-	 * @name decode
-	 * @param {String} string The Unicode input string (UCS-2).
-	 * @returns {Array} The new array of code points.
-	 */
-	function ucs2decode(string) {
-		const output = [];
-		let counter = 0;
-		const length = string.length;
-		while (counter < length) {
-			const value = string.charCodeAt(counter++);
-			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-				// It's a high surrogate, and there is a next character.
-				const extra = string.charCodeAt(counter++);
-				if ((extra & 0xFC00) == 0xDC00) { // Low surrogate.
-					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-				} else {
-					// It's an unmatched surrogate; only append this code unit, in case the
-					// next code unit is the high surrogate of a surrogate pair.
-					output.push(value);
-					counter--;
-				}
-			} else {
-				output.push(value);
-			}
-		}
-		return output;
-	}
-
-	/**
-	 * Creates a string based on an array of numeric code points.
-	 * @see `punycode.ucs2.decode`
-	 * @memberOf punycode.ucs2
-	 * @name encode
-	 * @param {Array} codePoints The array of numeric code points.
-	 * @returns {String} The new Unicode string (UCS-2).
-	 */
-	const ucs2encode = codePoints => String.fromCodePoint(...codePoints);
-
-	/**
-	 * Converts a basic code point into a digit/integer.
-	 * @see `digitToBasic()`
-	 * @private
-	 * @param {Number} codePoint The basic numeric code point value.
-	 * @returns {Number} The numeric value of a basic code point (for use in
-	 * representing integers) in the range `0` to `base - 1`, or `base` if
-	 * the code point does not represent a value.
-	 */
-	const basicToDigit = function(codePoint) {
-		if (codePoint >= 0x30 && codePoint < 0x3A) {
-			return 26 + (codePoint - 0x30);
-		}
-		if (codePoint >= 0x41 && codePoint < 0x5B) {
-			return codePoint - 0x41;
-		}
-		if (codePoint >= 0x61 && codePoint < 0x7B) {
-			return codePoint - 0x61;
-		}
-		return base;
-	};
-
-	/**
-	 * Converts a digit/integer into a basic code point.
-	 * @see `basicToDigit()`
-	 * @private
-	 * @param {Number} digit The numeric value of a basic code point.
-	 * @returns {Number} The basic code point whose value (when used for
-	 * representing integers) is `digit`, which needs to be in the range
-	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
-	 * used; else, the lowercase form is used. The behavior is undefined
-	 * if `flag` is non-zero and `digit` has no uppercase form.
-	 */
-	const digitToBasic = function(digit, flag) {
-		//  0..25 map to ASCII a..z or A..Z
-		// 26..35 map to ASCII 0..9
-		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
-	};
-
-	/**
-	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * https://tools.ietf.org/html/rfc3492#section-3.4
-	 * @private
-	 */
-	const adapt = function(delta, numPoints, firstTime) {
-		let k = 0;
-		delta = firstTime ? floor(delta / damp) : delta >> 1;
-		delta += floor(delta / numPoints);
-		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
-			delta = floor(delta / baseMinusTMin);
-		}
-		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
-	};
-
-	/**
-	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
-	 * symbols.
-	 * @memberOf punycode
-	 * @param {String} input The Punycode string of ASCII-only symbols.
-	 * @returns {String} The resulting string of Unicode symbols.
-	 */
-	const decode = function(input) {
-		// Don't use UCS-2.
-		const output = [];
-		const inputLength = input.length;
-		let i = 0;
-		let n = initialN;
-		let bias = initialBias;
-
-		// Handle the basic code points: let `basic` be the number of input code
-		// points before the last delimiter, or `0` if there is none, then copy
-		// the first basic code points to the output.
-
-		let basic = input.lastIndexOf(delimiter);
-		if (basic < 0) {
-			basic = 0;
-		}
-
-		for (let j = 0; j < basic; ++j) {
-			// if it's not a basic code point
-			if (input.charCodeAt(j) >= 0x80) {
-				error('not-basic');
-			}
-			output.push(input.charCodeAt(j));
-		}
-
-		// Main decoding loop: start just after the last delimiter if any basic code
-		// points were copied; start at the beginning otherwise.
-
-		for (let index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
-
-			// `index` is the index of the next character to be consumed.
-			// Decode a generalized variable-length integer into `delta`,
-			// which gets added to `i`. The overflow checking is easier
-			// if we increase `i` as we go, then subtract off its starting
-			// value at the end to obtain `delta`.
-			const oldi = i;
-			for (let w = 1, k = base; /* no condition */; k += base) {
-
-				if (index >= inputLength) {
-					error('invalid-input');
-				}
-
-				const digit = basicToDigit(input.charCodeAt(index++));
-
-				if (digit >= base) {
-					error('invalid-input');
-				}
-				if (digit > floor((maxInt - i) / w)) {
-					error('overflow');
-				}
-
-				i += digit * w;
-				const t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-
-				if (digit < t) {
-					break;
-				}
-
-				const baseMinusT = base - t;
-				if (w > floor(maxInt / baseMinusT)) {
-					error('overflow');
-				}
-
-				w *= baseMinusT;
-
-			}
-
-			const out = output.length + 1;
-			bias = adapt(i - oldi, out, oldi == 0);
-
-			// `i` was supposed to wrap around from `out` to `0`,
-			// incrementing `n` each time, so we'll fix that now:
-			if (floor(i / out) > maxInt - n) {
-				error('overflow');
-			}
-
-			n += floor(i / out);
-			i %= out;
-
-			// Insert `n` at position `i` of the output.
-			output.splice(i++, 0, n);
-
-		}
-
-		return String.fromCodePoint(...output);
-	};
-
-	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
-	 * @memberOf punycode
-	 * @param {String} input The string of Unicode symbols.
-	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
-	 */
-	const encode = function(input) {
-		const output = [];
-
-		// Convert the input in UCS-2 to an array of Unicode code points.
-		input = ucs2decode(input);
-
-		// Cache the length.
-		const inputLength = input.length;
-
-		// Initialize the state.
-		let n = initialN;
-		let delta = 0;
-		let bias = initialBias;
-
-		// Handle the basic code points.
-		for (const currentValue of input) {
-			if (currentValue < 0x80) {
-				output.push(stringFromCharCode(currentValue));
-			}
-		}
-
-		const basicLength = output.length;
-		let handledCPCount = basicLength;
-
-		// `handledCPCount` is the number of code points that have been handled;
-		// `basicLength` is the number of basic code points.
-
-		// Finish the basic string with a delimiter unless it's empty.
-		if (basicLength) {
-			output.push(delimiter);
-		}
-
-		// Main encoding loop:
-		while (handledCPCount < inputLength) {
-
-			// All non-basic code points < n have been handled already. Find the next
-			// larger one:
-			let m = maxInt;
-			for (const currentValue of input) {
-				if (currentValue >= n && currentValue < m) {
-					m = currentValue;
-				}
-			}
-
-			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
-			// but guard against overflow.
-			const handledCPCountPlusOne = handledCPCount + 1;
-			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
-				error('overflow');
-			}
-
-			delta += (m - n) * handledCPCountPlusOne;
-			n = m;
-
-			for (const currentValue of input) {
-				if (currentValue < n && ++delta > maxInt) {
-					error('overflow');
-				}
-				if (currentValue === n) {
-					// Represent delta as a generalized variable-length integer.
-					let q = delta;
-					for (let k = base; /* no condition */; k += base) {
-						const t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-						if (q < t) {
-							break;
-						}
-						const qMinusT = q - t;
-						const baseMinusT = base - t;
-						output.push(
-							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
-						);
-						q = floor(qMinusT / baseMinusT);
-					}
-
-					output.push(stringFromCharCode(digitToBasic(q, 0)));
-					bias = adapt(delta, handledCPCountPlusOne, handledCPCount === basicLength);
-					delta = 0;
-					++handledCPCount;
-				}
-			}
-
-			++delta;
-			++n;
-
-		}
-		return output.join('');
-	};
-
-	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
-	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
-	 * @returns {String} The Unicode representation of the given Punycode
-	 * string.
-	 */
-	const toUnicode = function(input) {
-		return mapDomain(input, function(string) {
-			return regexPunycode.test(string)
-				? decode(string.slice(4).toLowerCase())
-				: string;
-		});
-	};
-
-	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
-	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
-	 */
-	const toASCII = function(input) {
-		return mapDomain(input, function(string) {
-			return regexNonASCII.test(string)
-				? 'xn--' + encode(string)
-				: string;
-		});
-	};
-
-	/*--------------------------------------------------------------------------*/
-
-	/** Define the public API */
-	const punycode = {
-		/**
-		 * A string representing the current Punycode.js version number.
-		 * @memberOf punycode
-		 * @type String
-		 */
-		'version': '2.3.1',
-		/**
-		 * An object of methods to convert from JavaScript's internal character
-		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-		 * @memberOf punycode
-		 * @type Object
-		 */
-		'ucs2': {
-			'decode': ucs2decode,
-			'encode': ucs2encode
-		},
-		'decode': decode,
-		'encode': encode,
-		'toASCII': toASCII,
-		'toUnicode': toUnicode
-	};
-
-	punycode_1 = punycode;
-	return punycode_1;
-}
 
 var tr46 = {};
 
@@ -108458,7 +107192,7 @@ function requireTr46 () {
 	if (hasRequiredTr46) return tr46;
 	hasRequiredTr46 = 1;
 
-	var punycode = requirePunycode();
+	var punycode = require$$0$b;
 	var mappingTable = require$$1;
 
 	var PROCESSING_OPTIONS = {
@@ -108658,7 +107392,7 @@ function requireUrlStateMachine () {
 	if (hasRequiredUrlStateMachine) return urlStateMachine.exports;
 	hasRequiredUrlStateMachine = 1;
 	(function (module) {
-		const punycode = requirePunycode();
+		const punycode = require$$0$b;
 		const tr46 = requireTr46();
 
 		const specialSchemes = {
@@ -110167,11 +108901,11 @@ function requireURLImpl () {
 var hasRequiredURL;
 
 function requireURL () {
-	if (hasRequiredURL) return URL$1.exports;
+	if (hasRequiredURL) return URL$2.exports;
 	hasRequiredURL = 1;
 	(function (module) {
 
-		const conversions = requireLib$p();
+		const conversions = requireLib$o();
 		const utils = requireUtils$2();
 		const Impl = requireURLImpl();
 
@@ -110364,8 +109098,8 @@ function requireURL () {
 		    Worker: { URL: URL }
 		  }
 		}; 
-	} (URL$1));
-	return URL$1.exports;
+	} (URL$2));
+	return URL$2.exports;
 }
 
 var hasRequiredPublicApi;
@@ -110386,1801 +109120,1786 @@ function requirePublicApi () {
 	return publicApi;
 }
 
-var hasRequiredLib$o;
+var publicApiExports = requirePublicApi();
+var whatwgUrl = /*@__PURE__*/getDefaultExportFromCjs(publicApiExports);
 
-function requireLib$o () {
-	if (hasRequiredLib$o) return lib$n.exports;
-	hasRequiredLib$o = 1;
-	(function (module, exports) {
+// Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
 
-		Object.defineProperty(exports, '__esModule', { value: true });
+// fix for "Readable" isn't a named export issue
+const Readable = Stream.Readable;
 
-		function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+const BUFFER = Symbol('buffer');
+const TYPE = Symbol('type');
 
-		var Stream = _interopDefault(require$$0$7);
-		var http = _interopDefault(require$$2);
-		var Url = _interopDefault(require$$1$5);
-		var whatwgUrl = _interopDefault(requirePublicApi());
-		var https = _interopDefault(require$$3);
-		var zlib = _interopDefault(require$$3$1);
+let Blob$1 = class Blob {
+	constructor() {
+		this[TYPE] = '';
 
-		// Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
+		const blobParts = arguments[0];
+		const options = arguments[1];
 
-		// fix for "Readable" isn't a named export issue
-		const Readable = Stream.Readable;
+		const buffers = [];
+		let size = 0;
 
-		const BUFFER = Symbol('buffer');
-		const TYPE = Symbol('type');
-
-		class Blob {
-			constructor() {
-				this[TYPE] = '';
-
-				const blobParts = arguments[0];
-				const options = arguments[1];
-
-				const buffers = [];
-				let size = 0;
-
-				if (blobParts) {
-					const a = blobParts;
-					const length = Number(a.length);
-					for (let i = 0; i < length; i++) {
-						const element = a[i];
-						let buffer;
-						if (element instanceof Buffer) {
-							buffer = element;
-						} else if (ArrayBuffer.isView(element)) {
-							buffer = Buffer.from(element.buffer, element.byteOffset, element.byteLength);
-						} else if (element instanceof ArrayBuffer) {
-							buffer = Buffer.from(element);
-						} else if (element instanceof Blob) {
-							buffer = element[BUFFER];
-						} else {
-							buffer = Buffer.from(typeof element === 'string' ? element : String(element));
-						}
-						size += buffer.length;
-						buffers.push(buffer);
-					}
-				}
-
-				this[BUFFER] = Buffer.concat(buffers);
-
-				let type = options && options.type !== undefined && String(options.type).toLowerCase();
-				if (type && !/[^\u0020-\u007E]/.test(type)) {
-					this[TYPE] = type;
-				}
-			}
-			get size() {
-				return this[BUFFER].length;
-			}
-			get type() {
-				return this[TYPE];
-			}
-			text() {
-				return Promise.resolve(this[BUFFER].toString());
-			}
-			arrayBuffer() {
-				const buf = this[BUFFER];
-				const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-				return Promise.resolve(ab);
-			}
-			stream() {
-				const readable = new Readable();
-				readable._read = function () {};
-				readable.push(this[BUFFER]);
-				readable.push(null);
-				return readable;
-			}
-			toString() {
-				return '[object Blob]';
-			}
-			slice() {
-				const size = this.size;
-
-				const start = arguments[0];
-				const end = arguments[1];
-				let relativeStart, relativeEnd;
-				if (start === undefined) {
-					relativeStart = 0;
-				} else if (start < 0) {
-					relativeStart = Math.max(size + start, 0);
+		if (blobParts) {
+			const a = blobParts;
+			const length = Number(a.length);
+			for (let i = 0; i < length; i++) {
+				const element = a[i];
+				let buffer;
+				if (element instanceof Buffer) {
+					buffer = element;
+				} else if (ArrayBuffer.isView(element)) {
+					buffer = Buffer.from(element.buffer, element.byteOffset, element.byteLength);
+				} else if (element instanceof ArrayBuffer) {
+					buffer = Buffer.from(element);
+				} else if (element instanceof Blob) {
+					buffer = element[BUFFER];
 				} else {
-					relativeStart = Math.min(start, size);
+					buffer = Buffer.from(typeof element === 'string' ? element : String(element));
 				}
-				if (end === undefined) {
-					relativeEnd = size;
-				} else if (end < 0) {
-					relativeEnd = Math.max(size + end, 0);
-				} else {
-					relativeEnd = Math.min(end, size);
-				}
-				const span = Math.max(relativeEnd - relativeStart, 0);
-
-				const buffer = this[BUFFER];
-				const slicedBuffer = buffer.slice(relativeStart, relativeStart + span);
-				const blob = new Blob([], { type: arguments[2] });
-				blob[BUFFER] = slicedBuffer;
-				return blob;
+				size += buffer.length;
+				buffers.push(buffer);
 			}
 		}
 
-		Object.defineProperties(Blob.prototype, {
-			size: { enumerable: true },
-			type: { enumerable: true },
-			slice: { enumerable: true }
-		});
+		this[BUFFER] = Buffer.concat(buffers);
 
-		Object.defineProperty(Blob.prototype, Symbol.toStringTag, {
-			value: 'Blob',
-			writable: false,
-			enumerable: false,
-			configurable: true
-		});
-
-		/**
-		 * fetch-error.js
-		 *
-		 * FetchError interface for operational errors
-		 */
-
-		/**
-		 * Create FetchError instance
-		 *
-		 * @param   String      message      Error message for human
-		 * @param   String      type         Error type for machine
-		 * @param   String      systemError  For Node.js system error
-		 * @return  FetchError
-		 */
-		function FetchError(message, type, systemError) {
-		  Error.call(this, message);
-
-		  this.message = message;
-		  this.type = type;
-
-		  // when err.type is `system`, err.code contains system error code
-		  if (systemError) {
-		    this.code = this.errno = systemError.code;
-		  }
-
-		  // hide custom error implementation details from end-users
-		  Error.captureStackTrace(this, this.constructor);
+		let type = options && options.type !== undefined && String(options.type).toLowerCase();
+		if (type && !/[^\u0020-\u007E]/.test(type)) {
+			this[TYPE] = type;
 		}
+	}
+	get size() {
+		return this[BUFFER].length;
+	}
+	get type() {
+		return this[TYPE];
+	}
+	text() {
+		return Promise.resolve(this[BUFFER].toString());
+	}
+	arrayBuffer() {
+		const buf = this[BUFFER];
+		const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+		return Promise.resolve(ab);
+	}
+	stream() {
+		const readable = new Readable();
+		readable._read = function () {};
+		readable.push(this[BUFFER]);
+		readable.push(null);
+		return readable;
+	}
+	toString() {
+		return '[object Blob]';
+	}
+	slice() {
+		const size = this.size;
 
-		FetchError.prototype = Object.create(Error.prototype);
-		FetchError.prototype.constructor = FetchError;
-		FetchError.prototype.name = 'FetchError';
-
-		let convert;
-		try {
-			convert = require('encoding').convert;
-		} catch (e) {}
-
-		const INTERNALS = Symbol('Body internals');
-
-		// fix an issue where "PassThrough" isn't a named export for node <10
-		const PassThrough = Stream.PassThrough;
-
-		/**
-		 * Body mixin
-		 *
-		 * Ref: https://fetch.spec.whatwg.org/#body
-		 *
-		 * @param   Stream  body  Readable stream
-		 * @param   Object  opts  Response options
-		 * @return  Void
-		 */
-		function Body(body) {
-			var _this = this;
-
-			var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-			    _ref$size = _ref.size;
-
-			let size = _ref$size === undefined ? 0 : _ref$size;
-			var _ref$timeout = _ref.timeout;
-			let timeout = _ref$timeout === undefined ? 0 : _ref$timeout;
-
-			if (body == null) {
-				// body is undefined or null
-				body = null;
-			} else if (isURLSearchParams(body)) {
-				// body is a URLSearchParams
-				body = Buffer.from(body.toString());
-			} else if (isBlob(body)) ; else if (Buffer.isBuffer(body)) ; else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
-				// body is ArrayBuffer
-				body = Buffer.from(body);
-			} else if (ArrayBuffer.isView(body)) {
-				// body is ArrayBufferView
-				body = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
-			} else if (body instanceof Stream) ; else {
-				// none of the above
-				// coerce to string then buffer
-				body = Buffer.from(String(body));
-			}
-			this[INTERNALS] = {
-				body,
-				disturbed: false,
-				error: null
-			};
-			this.size = size;
-			this.timeout = timeout;
-
-			if (body instanceof Stream) {
-				body.on('error', function (err) {
-					const error = err.name === 'AbortError' ? err : new FetchError(`Invalid response body while trying to fetch ${_this.url}: ${err.message}`, 'system', err);
-					_this[INTERNALS].error = error;
-				});
-			}
+		const start = arguments[0];
+		const end = arguments[1];
+		let relativeStart, relativeEnd;
+		if (start === undefined) {
+			relativeStart = 0;
+		} else if (start < 0) {
+			relativeStart = Math.max(size + start, 0);
+		} else {
+			relativeStart = Math.min(start, size);
 		}
+		if (end === undefined) {
+			relativeEnd = size;
+		} else if (end < 0) {
+			relativeEnd = Math.max(size + end, 0);
+		} else {
+			relativeEnd = Math.min(end, size);
+		}
+		const span = Math.max(relativeEnd - relativeStart, 0);
 
-		Body.prototype = {
-			get body() {
-				return this[INTERNALS].body;
-			},
+		const buffer = this[BUFFER];
+		const slicedBuffer = buffer.slice(relativeStart, relativeStart + span);
+		const blob = new Blob([], { type: arguments[2] });
+		blob[BUFFER] = slicedBuffer;
+		return blob;
+	}
+};
 
-			get bodyUsed() {
-				return this[INTERNALS].disturbed;
-			},
+Object.defineProperties(Blob$1.prototype, {
+	size: { enumerable: true },
+	type: { enumerable: true },
+	slice: { enumerable: true }
+});
 
-			/**
-		  * Decode response as ArrayBuffer
-		  *
-		  * @return  Promise
-		  */
-			arrayBuffer() {
-				return consumeBody.call(this).then(function (buf) {
-					return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-				});
-			},
+Object.defineProperty(Blob$1.prototype, Symbol.toStringTag, {
+	value: 'Blob',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
 
-			/**
-		  * Return raw response as Blob
-		  *
-		  * @return Promise
-		  */
-			blob() {
-				let ct = this.headers && this.headers.get('content-type') || '';
-				return consumeBody.call(this).then(function (buf) {
-					return Object.assign(
-					// Prevent copying
-					new Blob([], {
-						type: ct.toLowerCase()
-					}), {
-						[BUFFER]: buf
-					});
-				});
-			},
+/**
+ * fetch-error.js
+ *
+ * FetchError interface for operational errors
+ */
 
-			/**
-		  * Decode response as json
-		  *
-		  * @return  Promise
-		  */
-			json() {
-				var _this2 = this;
+/**
+ * Create FetchError instance
+ *
+ * @param   String      message      Error message for human
+ * @param   String      type         Error type for machine
+ * @param   String      systemError  For Node.js system error
+ * @return  FetchError
+ */
+function FetchError(message, type, systemError) {
+  Error.call(this, message);
 
-				return consumeBody.call(this).then(function (buffer) {
-					try {
-						return JSON.parse(buffer.toString());
-					} catch (err) {
-						return Body.Promise.reject(new FetchError(`invalid json response body at ${_this2.url} reason: ${err.message}`, 'invalid-json'));
-					}
-				});
-			},
+  this.message = message;
+  this.type = type;
 
-			/**
-		  * Decode response as text
-		  *
-		  * @return  Promise
-		  */
-			text() {
-				return consumeBody.call(this).then(function (buffer) {
-					return buffer.toString();
-				});
-			},
+  // when err.type is `system`, err.code contains system error code
+  if (systemError) {
+    this.code = this.errno = systemError.code;
+  }
 
-			/**
-		  * Decode response as buffer (non-spec api)
-		  *
-		  * @return  Promise
-		  */
-			buffer() {
-				return consumeBody.call(this);
-			},
+  // hide custom error implementation details from end-users
+  Error.captureStackTrace(this, this.constructor);
+}
 
-			/**
-		  * Decode response as text, while automatically detecting the encoding and
-		  * trying to decode to UTF-8 (non-spec api)
-		  *
-		  * @return  Promise
-		  */
-			textConverted() {
-				var _this3 = this;
+FetchError.prototype = Object.create(Error.prototype);
+FetchError.prototype.constructor = FetchError;
+FetchError.prototype.name = 'FetchError';
 
-				return consumeBody.call(this).then(function (buffer) {
-					return convertBody(buffer, _this3.headers);
-				});
-			}
-		};
+let convert;
+try {
+	convert = require('encoding').convert;
+} catch (e) {}
 
-		// In browsers, all properties are enumerable.
-		Object.defineProperties(Body.prototype, {
-			body: { enumerable: true },
-			bodyUsed: { enumerable: true },
-			arrayBuffer: { enumerable: true },
-			blob: { enumerable: true },
-			json: { enumerable: true },
-			text: { enumerable: true }
+const INTERNALS = Symbol('Body internals');
+
+// fix an issue where "PassThrough" isn't a named export for node <10
+const PassThrough = Stream.PassThrough;
+
+/**
+ * Body mixin
+ *
+ * Ref: https://fetch.spec.whatwg.org/#body
+ *
+ * @param   Stream  body  Readable stream
+ * @param   Object  opts  Response options
+ * @return  Void
+ */
+function Body(body) {
+	var _this = this;
+
+	var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+	    _ref$size = _ref.size;
+
+	let size = _ref$size === undefined ? 0 : _ref$size;
+	var _ref$timeout = _ref.timeout;
+	let timeout = _ref$timeout === undefined ? 0 : _ref$timeout;
+
+	if (body == null) {
+		// body is undefined or null
+		body = null;
+	} else if (isURLSearchParams(body)) {
+		// body is a URLSearchParams
+		body = Buffer.from(body.toString());
+	} else if (isBlob(body)) ; else if (Buffer.isBuffer(body)) ; else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
+		// body is ArrayBuffer
+		body = Buffer.from(body);
+	} else if (ArrayBuffer.isView(body)) {
+		// body is ArrayBufferView
+		body = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+	} else if (body instanceof Stream) ; else {
+		// none of the above
+		// coerce to string then buffer
+		body = Buffer.from(String(body));
+	}
+	this[INTERNALS] = {
+		body,
+		disturbed: false,
+		error: null
+	};
+	this.size = size;
+	this.timeout = timeout;
+
+	if (body instanceof Stream) {
+		body.on('error', function (err) {
+			const error = err.name === 'AbortError' ? err : new FetchError(`Invalid response body while trying to fetch ${_this.url}: ${err.message}`, 'system', err);
+			_this[INTERNALS].error = error;
 		});
+	}
+}
 
-		Body.mixIn = function (proto) {
-			for (const name of Object.getOwnPropertyNames(Body.prototype)) {
-				// istanbul ignore else: future proof
-				if (!(name in proto)) {
-					const desc = Object.getOwnPropertyDescriptor(Body.prototype, name);
-					Object.defineProperty(proto, name, desc);
-				}
-			}
-		};
+Body.prototype = {
+	get body() {
+		return this[INTERNALS].body;
+	},
 
-		/**
-		 * Consume and convert an entire Body to a Buffer.
-		 *
-		 * Ref: https://fetch.spec.whatwg.org/#concept-body-consume-body
-		 *
-		 * @return  Promise
-		 */
-		function consumeBody() {
-			var _this4 = this;
+	get bodyUsed() {
+		return this[INTERNALS].disturbed;
+	},
 
-			if (this[INTERNALS].disturbed) {
-				return Body.Promise.reject(new TypeError(`body used already for: ${this.url}`));
-			}
+	/**
+  * Decode response as ArrayBuffer
+  *
+  * @return  Promise
+  */
+	arrayBuffer() {
+		return consumeBody.call(this).then(function (buf) {
+			return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+		});
+	},
 
-			this[INTERNALS].disturbed = true;
-
-			if (this[INTERNALS].error) {
-				return Body.Promise.reject(this[INTERNALS].error);
-			}
-
-			let body = this.body;
-
-			// body is null
-			if (body === null) {
-				return Body.Promise.resolve(Buffer.alloc(0));
-			}
-
-			// body is blob
-			if (isBlob(body)) {
-				body = body.stream();
-			}
-
-			// body is buffer
-			if (Buffer.isBuffer(body)) {
-				return Body.Promise.resolve(body);
-			}
-
-			// istanbul ignore if: should never happen
-			if (!(body instanceof Stream)) {
-				return Body.Promise.resolve(Buffer.alloc(0));
-			}
-
-			// body is stream
-			// get ready to actually consume the body
-			let accum = [];
-			let accumBytes = 0;
-			let abort = false;
-
-			return new Body.Promise(function (resolve, reject) {
-				let resTimeout;
-
-				// allow timeout on slow response body
-				if (_this4.timeout) {
-					resTimeout = setTimeout(function () {
-						abort = true;
-						reject(new FetchError(`Response timeout while trying to fetch ${_this4.url} (over ${_this4.timeout}ms)`, 'body-timeout'));
-					}, _this4.timeout);
-				}
-
-				// handle stream errors
-				body.on('error', function (err) {
-					if (err.name === 'AbortError') {
-						// if the request was aborted, reject with this Error
-						abort = true;
-						reject(err);
-					} else {
-						// other errors, such as incorrect content-encoding
-						reject(new FetchError(`Invalid response body while trying to fetch ${_this4.url}: ${err.message}`, 'system', err));
-					}
-				});
-
-				body.on('data', function (chunk) {
-					if (abort || chunk === null) {
-						return;
-					}
-
-					if (_this4.size && accumBytes + chunk.length > _this4.size) {
-						abort = true;
-						reject(new FetchError(`content size at ${_this4.url} over limit: ${_this4.size}`, 'max-size'));
-						return;
-					}
-
-					accumBytes += chunk.length;
-					accum.push(chunk);
-				});
-
-				body.on('end', function () {
-					if (abort) {
-						return;
-					}
-
-					clearTimeout(resTimeout);
-
-					try {
-						resolve(Buffer.concat(accum, accumBytes));
-					} catch (err) {
-						// handle streams that have accumulated too much data (issue #414)
-						reject(new FetchError(`Could not create Buffer from response body for ${_this4.url}: ${err.message}`, 'system', err));
-					}
-				});
+	/**
+  * Return raw response as Blob
+  *
+  * @return Promise
+  */
+	blob() {
+		let ct = this.headers && this.headers.get('content-type') || '';
+		return consumeBody.call(this).then(function (buf) {
+			return Object.assign(
+			// Prevent copying
+			new Blob$1([], {
+				type: ct.toLowerCase()
+			}), {
+				[BUFFER]: buf
 			});
+		});
+	},
+
+	/**
+  * Decode response as json
+  *
+  * @return  Promise
+  */
+	json() {
+		var _this2 = this;
+
+		return consumeBody.call(this).then(function (buffer) {
+			try {
+				return JSON.parse(buffer.toString());
+			} catch (err) {
+				return Body.Promise.reject(new FetchError(`invalid json response body at ${_this2.url} reason: ${err.message}`, 'invalid-json'));
+			}
+		});
+	},
+
+	/**
+  * Decode response as text
+  *
+  * @return  Promise
+  */
+	text() {
+		return consumeBody.call(this).then(function (buffer) {
+			return buffer.toString();
+		});
+	},
+
+	/**
+  * Decode response as buffer (non-spec api)
+  *
+  * @return  Promise
+  */
+	buffer() {
+		return consumeBody.call(this);
+	},
+
+	/**
+  * Decode response as text, while automatically detecting the encoding and
+  * trying to decode to UTF-8 (non-spec api)
+  *
+  * @return  Promise
+  */
+	textConverted() {
+		var _this3 = this;
+
+		return consumeBody.call(this).then(function (buffer) {
+			return convertBody(buffer, _this3.headers);
+		});
+	}
+};
+
+// In browsers, all properties are enumerable.
+Object.defineProperties(Body.prototype, {
+	body: { enumerable: true },
+	bodyUsed: { enumerable: true },
+	arrayBuffer: { enumerable: true },
+	blob: { enumerable: true },
+	json: { enumerable: true },
+	text: { enumerable: true }
+});
+
+Body.mixIn = function (proto) {
+	for (const name of Object.getOwnPropertyNames(Body.prototype)) {
+		// istanbul ignore else: future proof
+		if (!(name in proto)) {
+			const desc = Object.getOwnPropertyDescriptor(Body.prototype, name);
+			Object.defineProperty(proto, name, desc);
+		}
+	}
+};
+
+/**
+ * Consume and convert an entire Body to a Buffer.
+ *
+ * Ref: https://fetch.spec.whatwg.org/#concept-body-consume-body
+ *
+ * @return  Promise
+ */
+function consumeBody() {
+	var _this4 = this;
+
+	if (this[INTERNALS].disturbed) {
+		return Body.Promise.reject(new TypeError(`body used already for: ${this.url}`));
+	}
+
+	this[INTERNALS].disturbed = true;
+
+	if (this[INTERNALS].error) {
+		return Body.Promise.reject(this[INTERNALS].error);
+	}
+
+	let body = this.body;
+
+	// body is null
+	if (body === null) {
+		return Body.Promise.resolve(Buffer.alloc(0));
+	}
+
+	// body is blob
+	if (isBlob(body)) {
+		body = body.stream();
+	}
+
+	// body is buffer
+	if (Buffer.isBuffer(body)) {
+		return Body.Promise.resolve(body);
+	}
+
+	// istanbul ignore if: should never happen
+	if (!(body instanceof Stream)) {
+		return Body.Promise.resolve(Buffer.alloc(0));
+	}
+
+	// body is stream
+	// get ready to actually consume the body
+	let accum = [];
+	let accumBytes = 0;
+	let abort = false;
+
+	return new Body.Promise(function (resolve, reject) {
+		let resTimeout;
+
+		// allow timeout on slow response body
+		if (_this4.timeout) {
+			resTimeout = setTimeout(function () {
+				abort = true;
+				reject(new FetchError(`Response timeout while trying to fetch ${_this4.url} (over ${_this4.timeout}ms)`, 'body-timeout'));
+			}, _this4.timeout);
 		}
 
-		/**
-		 * Detect buffer encoding and convert to target encoding
-		 * ref: http://www.w3.org/TR/2011/WD-html5-20110113/parsing.html#determining-the-character-encoding
-		 *
-		 * @param   Buffer  buffer    Incoming buffer
-		 * @param   String  encoding  Target encoding
-		 * @return  String
-		 */
-		function convertBody(buffer, headers) {
-			if (typeof convert !== 'function') {
-				throw new Error('The package `encoding` must be installed to use the textConverted() function');
+		// handle stream errors
+		body.on('error', function (err) {
+			if (err.name === 'AbortError') {
+				// if the request was aborted, reject with this Error
+				abort = true;
+				reject(err);
+			} else {
+				// other errors, such as incorrect content-encoding
+				reject(new FetchError(`Invalid response body while trying to fetch ${_this4.url}: ${err.message}`, 'system', err));
+			}
+		});
+
+		body.on('data', function (chunk) {
+			if (abort || chunk === null) {
+				return;
 			}
 
-			const ct = headers.get('content-type');
-			let charset = 'utf-8';
-			let res, str;
-
-			// header
-			if (ct) {
-				res = /charset=([^;]*)/i.exec(ct);
+			if (_this4.size && accumBytes + chunk.length > _this4.size) {
+				abort = true;
+				reject(new FetchError(`content size at ${_this4.url} over limit: ${_this4.size}`, 'max-size'));
+				return;
 			}
 
-			// no charset in content type, peek at response body for at most 1024 bytes
-			str = buffer.slice(0, 1024).toString();
+			accumBytes += chunk.length;
+			accum.push(chunk);
+		});
 
-			// html5
-			if (!res && str) {
-				res = /<meta.+?charset=(['"])(.+?)\1/i.exec(str);
+		body.on('end', function () {
+			if (abort) {
+				return;
 			}
 
-			// html4
-			if (!res && str) {
-				res = /<meta[\s]+?http-equiv=(['"])content-type\1[\s]+?content=(['"])(.+?)\2/i.exec(str);
-				if (!res) {
-					res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str);
-					if (res) {
-						res.pop(); // drop last quote
-					}
-				}
+			clearTimeout(resTimeout);
 
-				if (res) {
-					res = /charset=(.*)/i.exec(res.pop());
-				}
+			try {
+				resolve(Buffer.concat(accum, accumBytes));
+			} catch (err) {
+				// handle streams that have accumulated too much data (issue #414)
+				reject(new FetchError(`Could not create Buffer from response body for ${_this4.url}: ${err.message}`, 'system', err));
 			}
+		});
+	});
+}
 
-			// xml
-			if (!res && str) {
-				res = /<\?xml.+?encoding=(['"])(.+?)\1/i.exec(str);
-			}
+/**
+ * Detect buffer encoding and convert to target encoding
+ * ref: http://www.w3.org/TR/2011/WD-html5-20110113/parsing.html#determining-the-character-encoding
+ *
+ * @param   Buffer  buffer    Incoming buffer
+ * @param   String  encoding  Target encoding
+ * @return  String
+ */
+function convertBody(buffer, headers) {
+	if (typeof convert !== 'function') {
+		throw new Error('The package `encoding` must be installed to use the textConverted() function');
+	}
 
-			// found charset
+	const ct = headers.get('content-type');
+	let charset = 'utf-8';
+	let res, str;
+
+	// header
+	if (ct) {
+		res = /charset=([^;]*)/i.exec(ct);
+	}
+
+	// no charset in content type, peek at response body for at most 1024 bytes
+	str = buffer.slice(0, 1024).toString();
+
+	// html5
+	if (!res && str) {
+		res = /<meta.+?charset=(['"])(.+?)\1/i.exec(str);
+	}
+
+	// html4
+	if (!res && str) {
+		res = /<meta[\s]+?http-equiv=(['"])content-type\1[\s]+?content=(['"])(.+?)\2/i.exec(str);
+		if (!res) {
+			res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str);
 			if (res) {
-				charset = res.pop();
+				res.pop(); // drop last quote
+			}
+		}
 
-				// prevent decode issues when sites use incorrect encoding
-				// ref: https://hsivonen.fi/encoding-menu/
-				if (charset === 'gb2312' || charset === 'gbk') {
-					charset = 'gb18030';
+		if (res) {
+			res = /charset=(.*)/i.exec(res.pop());
+		}
+	}
+
+	// xml
+	if (!res && str) {
+		res = /<\?xml.+?encoding=(['"])(.+?)\1/i.exec(str);
+	}
+
+	// found charset
+	if (res) {
+		charset = res.pop();
+
+		// prevent decode issues when sites use incorrect encoding
+		// ref: https://hsivonen.fi/encoding-menu/
+		if (charset === 'gb2312' || charset === 'gbk') {
+			charset = 'gb18030';
+		}
+	}
+
+	// turn raw buffers into a single utf-8 buffer
+	return convert(buffer, 'UTF-8', charset).toString();
+}
+
+/**
+ * Detect a URLSearchParams object
+ * ref: https://github.com/bitinn/node-fetch/issues/296#issuecomment-307598143
+ *
+ * @param   Object  obj     Object to detect by type or brand
+ * @return  String
+ */
+function isURLSearchParams(obj) {
+	// Duck-typing as a necessary condition.
+	if (typeof obj !== 'object' || typeof obj.append !== 'function' || typeof obj.delete !== 'function' || typeof obj.get !== 'function' || typeof obj.getAll !== 'function' || typeof obj.has !== 'function' || typeof obj.set !== 'function') {
+		return false;
+	}
+
+	// Brand-checking and more duck-typing as optional condition.
+	return obj.constructor.name === 'URLSearchParams' || Object.prototype.toString.call(obj) === '[object URLSearchParams]' || typeof obj.sort === 'function';
+}
+
+/**
+ * Check if `obj` is a W3C `Blob` object (which `File` inherits from)
+ * @param  {*} obj
+ * @return {boolean}
+ */
+function isBlob(obj) {
+	return typeof obj === 'object' && typeof obj.arrayBuffer === 'function' && typeof obj.type === 'string' && typeof obj.stream === 'function' && typeof obj.constructor === 'function' && typeof obj.constructor.name === 'string' && /^(Blob|File)$/.test(obj.constructor.name) && /^(Blob|File)$/.test(obj[Symbol.toStringTag]);
+}
+
+/**
+ * Clone body given Res/Req instance
+ *
+ * @param   Mixed  instance  Response or Request instance
+ * @return  Mixed
+ */
+function clone$1(instance) {
+	let p1, p2;
+	let body = instance.body;
+
+	// don't allow cloning a used body
+	if (instance.bodyUsed) {
+		throw new Error('cannot clone body after it is used');
+	}
+
+	// check that body is a stream and not form-data object
+	// note: we can't clone the form-data object without having it as a dependency
+	if (body instanceof Stream && typeof body.getBoundary !== 'function') {
+		// tee instance body
+		p1 = new PassThrough();
+		p2 = new PassThrough();
+		body.pipe(p1);
+		body.pipe(p2);
+		// set instance body to teed body and return the other teed body
+		instance[INTERNALS].body = p1;
+		body = p2;
+	}
+
+	return body;
+}
+
+/**
+ * Performs the operation "extract a `Content-Type` value from |object|" as
+ * specified in the specification:
+ * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
+ *
+ * This function assumes that instance.body is present.
+ *
+ * @param   Mixed  instance  Any options.body input
+ */
+function extractContentType(body) {
+	if (body === null) {
+		// body is null
+		return null;
+	} else if (typeof body === 'string') {
+		// body is string
+		return 'text/plain;charset=UTF-8';
+	} else if (isURLSearchParams(body)) {
+		// body is a URLSearchParams
+		return 'application/x-www-form-urlencoded;charset=UTF-8';
+	} else if (isBlob(body)) {
+		// body is blob
+		return body.type || null;
+	} else if (Buffer.isBuffer(body)) {
+		// body is buffer
+		return null;
+	} else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
+		// body is ArrayBuffer
+		return null;
+	} else if (ArrayBuffer.isView(body)) {
+		// body is ArrayBufferView
+		return null;
+	} else if (typeof body.getBoundary === 'function') {
+		// detect form data input from form-data module
+		return `multipart/form-data;boundary=${body.getBoundary()}`;
+	} else if (body instanceof Stream) {
+		// body is stream
+		// can't really do much about this
+		return null;
+	} else {
+		// Body constructor defaults other things to string
+		return 'text/plain;charset=UTF-8';
+	}
+}
+
+/**
+ * The Fetch Standard treats this as if "total bytes" is a property on the body.
+ * For us, we have to explicitly get it with a function.
+ *
+ * ref: https://fetch.spec.whatwg.org/#concept-body-total-bytes
+ *
+ * @param   Body    instance   Instance of Body
+ * @return  Number?            Number of bytes, or null if not possible
+ */
+function getTotalBytes(instance) {
+	const body = instance.body;
+
+
+	if (body === null) {
+		// body is null
+		return 0;
+	} else if (isBlob(body)) {
+		return body.size;
+	} else if (Buffer.isBuffer(body)) {
+		// body is buffer
+		return body.length;
+	} else if (body && typeof body.getLengthSync === 'function') {
+		// detect form data input from form-data module
+		if (body._lengthRetrievers && body._lengthRetrievers.length == 0 || // 1.x
+		body.hasKnownLength && body.hasKnownLength()) {
+			// 2.x
+			return body.getLengthSync();
+		}
+		return null;
+	} else {
+		// body is stream
+		return null;
+	}
+}
+
+/**
+ * Write a Body to a Node.js WritableStream (e.g. http.Request) object.
+ *
+ * @param   Body    instance   Instance of Body
+ * @return  Void
+ */
+function writeToStream(dest, instance) {
+	const body = instance.body;
+
+
+	if (body === null) {
+		// body is null
+		dest.end();
+	} else if (isBlob(body)) {
+		body.stream().pipe(dest);
+	} else if (Buffer.isBuffer(body)) {
+		// body is buffer
+		dest.write(body);
+		dest.end();
+	} else {
+		// body is stream
+		body.pipe(dest);
+	}
+}
+
+// expose Promise
+Body.Promise = global.Promise;
+
+/**
+ * headers.js
+ *
+ * Headers class offers convenient helpers
+ */
+
+const invalidTokenRegex = /[^\^_`a-zA-Z\-0-9!#$%&'*+.|~]/;
+const invalidHeaderCharRegex = /[^\t\x20-\x7e\x80-\xff]/;
+
+function validateName(name) {
+	name = `${name}`;
+	if (invalidTokenRegex.test(name) || name === '') {
+		throw new TypeError(`${name} is not a legal HTTP header name`);
+	}
+}
+
+function validateValue(value) {
+	value = `${value}`;
+	if (invalidHeaderCharRegex.test(value)) {
+		throw new TypeError(`${value} is not a legal HTTP header value`);
+	}
+}
+
+/**
+ * Find the key in the map object given a header name.
+ *
+ * Returns undefined if not found.
+ *
+ * @param   String  name  Header name
+ * @return  String|Undefined
+ */
+function find$2(map, name) {
+	name = name.toLowerCase();
+	for (const key in map) {
+		if (key.toLowerCase() === name) {
+			return key;
+		}
+	}
+	return undefined;
+}
+
+const MAP = Symbol('map');
+class Headers {
+	/**
+  * Headers class
+  *
+  * @param   Object  headers  Response headers
+  * @return  Void
+  */
+	constructor() {
+		let init = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
+
+		this[MAP] = Object.create(null);
+
+		if (init instanceof Headers) {
+			const rawHeaders = init.raw();
+			const headerNames = Object.keys(rawHeaders);
+
+			for (const headerName of headerNames) {
+				for (const value of rawHeaders[headerName]) {
+					this.append(headerName, value);
 				}
 			}
 
-			// turn raw buffers into a single utf-8 buffer
-			return convert(buffer, 'UTF-8', charset).toString();
+			return;
 		}
 
-		/**
-		 * Detect a URLSearchParams object
-		 * ref: https://github.com/bitinn/node-fetch/issues/296#issuecomment-307598143
-		 *
-		 * @param   Object  obj     Object to detect by type or brand
-		 * @return  String
-		 */
-		function isURLSearchParams(obj) {
-			// Duck-typing as a necessary condition.
-			if (typeof obj !== 'object' || typeof obj.append !== 'function' || typeof obj.delete !== 'function' || typeof obj.get !== 'function' || typeof obj.getAll !== 'function' || typeof obj.has !== 'function' || typeof obj.set !== 'function') {
-				return false;
-			}
-
-			// Brand-checking and more duck-typing as optional condition.
-			return obj.constructor.name === 'URLSearchParams' || Object.prototype.toString.call(obj) === '[object URLSearchParams]' || typeof obj.sort === 'function';
-		}
-
-		/**
-		 * Check if `obj` is a W3C `Blob` object (which `File` inherits from)
-		 * @param  {*} obj
-		 * @return {boolean}
-		 */
-		function isBlob(obj) {
-			return typeof obj === 'object' && typeof obj.arrayBuffer === 'function' && typeof obj.type === 'string' && typeof obj.stream === 'function' && typeof obj.constructor === 'function' && typeof obj.constructor.name === 'string' && /^(Blob|File)$/.test(obj.constructor.name) && /^(Blob|File)$/.test(obj[Symbol.toStringTag]);
-		}
-
-		/**
-		 * Clone body given Res/Req instance
-		 *
-		 * @param   Mixed  instance  Response or Request instance
-		 * @return  Mixed
-		 */
-		function clone(instance) {
-			let p1, p2;
-			let body = instance.body;
-
-			// don't allow cloning a used body
-			if (instance.bodyUsed) {
-				throw new Error('cannot clone body after it is used');
-			}
-
-			// check that body is a stream and not form-data object
-			// note: we can't clone the form-data object without having it as a dependency
-			if (body instanceof Stream && typeof body.getBoundary !== 'function') {
-				// tee instance body
-				p1 = new PassThrough();
-				p2 = new PassThrough();
-				body.pipe(p1);
-				body.pipe(p2);
-				// set instance body to teed body and return the other teed body
-				instance[INTERNALS].body = p1;
-				body = p2;
-			}
-
-			return body;
-		}
-
-		/**
-		 * Performs the operation "extract a `Content-Type` value from |object|" as
-		 * specified in the specification:
-		 * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
-		 *
-		 * This function assumes that instance.body is present.
-		 *
-		 * @param   Mixed  instance  Any options.body input
-		 */
-		function extractContentType(body) {
-			if (body === null) {
-				// body is null
-				return null;
-			} else if (typeof body === 'string') {
-				// body is string
-				return 'text/plain;charset=UTF-8';
-			} else if (isURLSearchParams(body)) {
-				// body is a URLSearchParams
-				return 'application/x-www-form-urlencoded;charset=UTF-8';
-			} else if (isBlob(body)) {
-				// body is blob
-				return body.type || null;
-			} else if (Buffer.isBuffer(body)) {
-				// body is buffer
-				return null;
-			} else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
-				// body is ArrayBuffer
-				return null;
-			} else if (ArrayBuffer.isView(body)) {
-				// body is ArrayBufferView
-				return null;
-			} else if (typeof body.getBoundary === 'function') {
-				// detect form data input from form-data module
-				return `multipart/form-data;boundary=${body.getBoundary()}`;
-			} else if (body instanceof Stream) {
-				// body is stream
-				// can't really do much about this
-				return null;
-			} else {
-				// Body constructor defaults other things to string
-				return 'text/plain;charset=UTF-8';
-			}
-		}
-
-		/**
-		 * The Fetch Standard treats this as if "total bytes" is a property on the body.
-		 * For us, we have to explicitly get it with a function.
-		 *
-		 * ref: https://fetch.spec.whatwg.org/#concept-body-total-bytes
-		 *
-		 * @param   Body    instance   Instance of Body
-		 * @return  Number?            Number of bytes, or null if not possible
-		 */
-		function getTotalBytes(instance) {
-			const body = instance.body;
-
-
-			if (body === null) {
-				// body is null
-				return 0;
-			} else if (isBlob(body)) {
-				return body.size;
-			} else if (Buffer.isBuffer(body)) {
-				// body is buffer
-				return body.length;
-			} else if (body && typeof body.getLengthSync === 'function') {
-				// detect form data input from form-data module
-				if (body._lengthRetrievers && body._lengthRetrievers.length == 0 || // 1.x
-				body.hasKnownLength && body.hasKnownLength()) {
-					// 2.x
-					return body.getLengthSync();
+		// We don't worry about converting prop to ByteString here as append()
+		// will handle it.
+		if (init == null) ; else if (typeof init === 'object') {
+			const method = init[Symbol.iterator];
+			if (method != null) {
+				if (typeof method !== 'function') {
+					throw new TypeError('Header pairs must be iterable');
 				}
-				return null;
-			} else {
-				// body is stream
-				return null;
-			}
-		}
 
-		/**
-		 * Write a Body to a Node.js WritableStream (e.g. http.Request) object.
-		 *
-		 * @param   Body    instance   Instance of Body
-		 * @return  Void
-		 */
-		function writeToStream(dest, instance) {
-			const body = instance.body;
-
-
-			if (body === null) {
-				// body is null
-				dest.end();
-			} else if (isBlob(body)) {
-				body.stream().pipe(dest);
-			} else if (Buffer.isBuffer(body)) {
-				// body is buffer
-				dest.write(body);
-				dest.end();
-			} else {
-				// body is stream
-				body.pipe(dest);
-			}
-		}
-
-		// expose Promise
-		Body.Promise = commonjsGlobal.Promise;
-
-		/**
-		 * headers.js
-		 *
-		 * Headers class offers convenient helpers
-		 */
-
-		const invalidTokenRegex = /[^\^_`a-zA-Z\-0-9!#$%&'*+.|~]/;
-		const invalidHeaderCharRegex = /[^\t\x20-\x7e\x80-\xff]/;
-
-		function validateName(name) {
-			name = `${name}`;
-			if (invalidTokenRegex.test(name) || name === '') {
-				throw new TypeError(`${name} is not a legal HTTP header name`);
-			}
-		}
-
-		function validateValue(value) {
-			value = `${value}`;
-			if (invalidHeaderCharRegex.test(value)) {
-				throw new TypeError(`${value} is not a legal HTTP header value`);
-			}
-		}
-
-		/**
-		 * Find the key in the map object given a header name.
-		 *
-		 * Returns undefined if not found.
-		 *
-		 * @param   String  name  Header name
-		 * @return  String|Undefined
-		 */
-		function find(map, name) {
-			name = name.toLowerCase();
-			for (const key in map) {
-				if (key.toLowerCase() === name) {
-					return key;
-				}
-			}
-			return undefined;
-		}
-
-		const MAP = Symbol('map');
-		class Headers {
-			/**
-		  * Headers class
-		  *
-		  * @param   Object  headers  Response headers
-		  * @return  Void
-		  */
-			constructor() {
-				let init = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
-
-				this[MAP] = Object.create(null);
-
-				if (init instanceof Headers) {
-					const rawHeaders = init.raw();
-					const headerNames = Object.keys(rawHeaders);
-
-					for (const headerName of headerNames) {
-						for (const value of rawHeaders[headerName]) {
-							this.append(headerName, value);
-						}
+				// sequence<sequence<ByteString>>
+				// Note: per spec we have to first exhaust the lists then process them
+				const pairs = [];
+				for (const pair of init) {
+					if (typeof pair !== 'object' || typeof pair[Symbol.iterator] !== 'function') {
+						throw new TypeError('Each header pair must be iterable');
 					}
-
-					return;
+					pairs.push(Array.from(pair));
 				}
 
-				// We don't worry about converting prop to ByteString here as append()
-				// will handle it.
-				if (init == null) ; else if (typeof init === 'object') {
-					const method = init[Symbol.iterator];
-					if (method != null) {
-						if (typeof method !== 'function') {
-							throw new TypeError('Header pairs must be iterable');
-						}
-
-						// sequence<sequence<ByteString>>
-						// Note: per spec we have to first exhaust the lists then process them
-						const pairs = [];
-						for (const pair of init) {
-							if (typeof pair !== 'object' || typeof pair[Symbol.iterator] !== 'function') {
-								throw new TypeError('Each header pair must be iterable');
-							}
-							pairs.push(Array.from(pair));
-						}
-
-						for (const pair of pairs) {
-							if (pair.length !== 2) {
-								throw new TypeError('Each header pair must be a name/value tuple');
-							}
-							this.append(pair[0], pair[1]);
-						}
-					} else {
-						// record<ByteString, ByteString>
-						for (const key of Object.keys(init)) {
-							const value = init[key];
-							this.append(key, value);
-						}
+				for (const pair of pairs) {
+					if (pair.length !== 2) {
+						throw new TypeError('Each header pair must be a name/value tuple');
 					}
-				} else {
-					throw new TypeError('Provided initializer must be an object');
+					this.append(pair[0], pair[1]);
+				}
+			} else {
+				// record<ByteString, ByteString>
+				for (const key of Object.keys(init)) {
+					const value = init[key];
+					this.append(key, value);
 				}
 			}
-
-			/**
-		  * Return combined header value given name
-		  *
-		  * @param   String  name  Header name
-		  * @return  Mixed
-		  */
-			get(name) {
-				name = `${name}`;
-				validateName(name);
-				const key = find(this[MAP], name);
-				if (key === undefined) {
-					return null;
-				}
-
-				return this[MAP][key].join(', ');
-			}
-
-			/**
-		  * Iterate over all headers
-		  *
-		  * @param   Function  callback  Executed for each item with parameters (value, name, thisArg)
-		  * @param   Boolean   thisArg   `this` context for callback function
-		  * @return  Void
-		  */
-			forEach(callback) {
-				let thisArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-
-				let pairs = getHeaders(this);
-				let i = 0;
-				while (i < pairs.length) {
-					var _pairs$i = pairs[i];
-					const name = _pairs$i[0],
-					      value = _pairs$i[1];
-
-					callback.call(thisArg, value, name, this);
-					pairs = getHeaders(this);
-					i++;
-				}
-			}
-
-			/**
-		  * Overwrite header values given name
-		  *
-		  * @param   String  name   Header name
-		  * @param   String  value  Header value
-		  * @return  Void
-		  */
-			set(name, value) {
-				name = `${name}`;
-				value = `${value}`;
-				validateName(name);
-				validateValue(value);
-				const key = find(this[MAP], name);
-				this[MAP][key !== undefined ? key : name] = [value];
-			}
-
-			/**
-		  * Append a value onto existing header
-		  *
-		  * @param   String  name   Header name
-		  * @param   String  value  Header value
-		  * @return  Void
-		  */
-			append(name, value) {
-				name = `${name}`;
-				value = `${value}`;
-				validateName(name);
-				validateValue(value);
-				const key = find(this[MAP], name);
-				if (key !== undefined) {
-					this[MAP][key].push(value);
-				} else {
-					this[MAP][name] = [value];
-				}
-			}
-
-			/**
-		  * Check for header name existence
-		  *
-		  * @param   String   name  Header name
-		  * @return  Boolean
-		  */
-			has(name) {
-				name = `${name}`;
-				validateName(name);
-				return find(this[MAP], name) !== undefined;
-			}
-
-			/**
-		  * Delete all header values given name
-		  *
-		  * @param   String  name  Header name
-		  * @return  Void
-		  */
-			delete(name) {
-				name = `${name}`;
-				validateName(name);
-				const key = find(this[MAP], name);
-				if (key !== undefined) {
-					delete this[MAP][key];
-				}
-			}
-
-			/**
-		  * Return raw headers (non-spec api)
-		  *
-		  * @return  Object
-		  */
-			raw() {
-				return this[MAP];
-			}
-
-			/**
-		  * Get an iterator on keys.
-		  *
-		  * @return  Iterator
-		  */
-			keys() {
-				return createHeadersIterator(this, 'key');
-			}
-
-			/**
-		  * Get an iterator on values.
-		  *
-		  * @return  Iterator
-		  */
-			values() {
-				return createHeadersIterator(this, 'value');
-			}
-
-			/**
-		  * Get an iterator on entries.
-		  *
-		  * This is the default iterator of the Headers object.
-		  *
-		  * @return  Iterator
-		  */
-			[Symbol.iterator]() {
-				return createHeadersIterator(this, 'key+value');
-			}
+		} else {
+			throw new TypeError('Provided initializer must be an object');
 		}
-		Headers.prototype.entries = Headers.prototype[Symbol.iterator];
+	}
 
-		Object.defineProperty(Headers.prototype, Symbol.toStringTag, {
-			value: 'Headers',
-			writable: false,
-			enumerable: false,
-			configurable: true
-		});
-
-		Object.defineProperties(Headers.prototype, {
-			get: { enumerable: true },
-			forEach: { enumerable: true },
-			set: { enumerable: true },
-			append: { enumerable: true },
-			has: { enumerable: true },
-			delete: { enumerable: true },
-			keys: { enumerable: true },
-			values: { enumerable: true },
-			entries: { enumerable: true }
-		});
-
-		function getHeaders(headers) {
-			let kind = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'key+value';
-
-			const keys = Object.keys(headers[MAP]).sort();
-			return keys.map(kind === 'key' ? function (k) {
-				return k.toLowerCase();
-			} : kind === 'value' ? function (k) {
-				return headers[MAP][k].join(', ');
-			} : function (k) {
-				return [k.toLowerCase(), headers[MAP][k].join(', ')];
-			});
+	/**
+  * Return combined header value given name
+  *
+  * @param   String  name  Header name
+  * @return  Mixed
+  */
+	get(name) {
+		name = `${name}`;
+		validateName(name);
+		const key = find$2(this[MAP], name);
+		if (key === undefined) {
+			return null;
 		}
 
-		const INTERNAL = Symbol('internal');
+		return this[MAP][key].join(', ');
+	}
 
-		function createHeadersIterator(target, kind) {
-			const iterator = Object.create(HeadersIteratorPrototype);
-			iterator[INTERNAL] = {
-				target,
-				kind,
-				index: 0
+	/**
+  * Iterate over all headers
+  *
+  * @param   Function  callback  Executed for each item with parameters (value, name, thisArg)
+  * @param   Boolean   thisArg   `this` context for callback function
+  * @return  Void
+  */
+	forEach(callback) {
+		let thisArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
+
+		let pairs = getHeaders(this);
+		let i = 0;
+		while (i < pairs.length) {
+			var _pairs$i = pairs[i];
+			const name = _pairs$i[0],
+			      value = _pairs$i[1];
+
+			callback.call(thisArg, value, name, this);
+			pairs = getHeaders(this);
+			i++;
+		}
+	}
+
+	/**
+  * Overwrite header values given name
+  *
+  * @param   String  name   Header name
+  * @param   String  value  Header value
+  * @return  Void
+  */
+	set(name, value) {
+		name = `${name}`;
+		value = `${value}`;
+		validateName(name);
+		validateValue(value);
+		const key = find$2(this[MAP], name);
+		this[MAP][key !== undefined ? key : name] = [value];
+	}
+
+	/**
+  * Append a value onto existing header
+  *
+  * @param   String  name   Header name
+  * @param   String  value  Header value
+  * @return  Void
+  */
+	append(name, value) {
+		name = `${name}`;
+		value = `${value}`;
+		validateName(name);
+		validateValue(value);
+		const key = find$2(this[MAP], name);
+		if (key !== undefined) {
+			this[MAP][key].push(value);
+		} else {
+			this[MAP][name] = [value];
+		}
+	}
+
+	/**
+  * Check for header name existence
+  *
+  * @param   String   name  Header name
+  * @return  Boolean
+  */
+	has(name) {
+		name = `${name}`;
+		validateName(name);
+		return find$2(this[MAP], name) !== undefined;
+	}
+
+	/**
+  * Delete all header values given name
+  *
+  * @param   String  name  Header name
+  * @return  Void
+  */
+	delete(name) {
+		name = `${name}`;
+		validateName(name);
+		const key = find$2(this[MAP], name);
+		if (key !== undefined) {
+			delete this[MAP][key];
+		}
+	}
+
+	/**
+  * Return raw headers (non-spec api)
+  *
+  * @return  Object
+  */
+	raw() {
+		return this[MAP];
+	}
+
+	/**
+  * Get an iterator on keys.
+  *
+  * @return  Iterator
+  */
+	keys() {
+		return createHeadersIterator(this, 'key');
+	}
+
+	/**
+  * Get an iterator on values.
+  *
+  * @return  Iterator
+  */
+	values() {
+		return createHeadersIterator(this, 'value');
+	}
+
+	/**
+  * Get an iterator on entries.
+  *
+  * This is the default iterator of the Headers object.
+  *
+  * @return  Iterator
+  */
+	[Symbol.iterator]() {
+		return createHeadersIterator(this, 'key+value');
+	}
+}
+Headers.prototype.entries = Headers.prototype[Symbol.iterator];
+
+Object.defineProperty(Headers.prototype, Symbol.toStringTag, {
+	value: 'Headers',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperties(Headers.prototype, {
+	get: { enumerable: true },
+	forEach: { enumerable: true },
+	set: { enumerable: true },
+	append: { enumerable: true },
+	has: { enumerable: true },
+	delete: { enumerable: true },
+	keys: { enumerable: true },
+	values: { enumerable: true },
+	entries: { enumerable: true }
+});
+
+function getHeaders(headers) {
+	let kind = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'key+value';
+
+	const keys = Object.keys(headers[MAP]).sort();
+	return keys.map(kind === 'key' ? function (k) {
+		return k.toLowerCase();
+	} : kind === 'value' ? function (k) {
+		return headers[MAP][k].join(', ');
+	} : function (k) {
+		return [k.toLowerCase(), headers[MAP][k].join(', ')];
+	});
+}
+
+const INTERNAL = Symbol('internal');
+
+function createHeadersIterator(target, kind) {
+	const iterator = Object.create(HeadersIteratorPrototype);
+	iterator[INTERNAL] = {
+		target,
+		kind,
+		index: 0
+	};
+	return iterator;
+}
+
+const HeadersIteratorPrototype = Object.setPrototypeOf({
+	next() {
+		// istanbul ignore if
+		if (!this || Object.getPrototypeOf(this) !== HeadersIteratorPrototype) {
+			throw new TypeError('Value of `this` is not a HeadersIterator');
+		}
+
+		var _INTERNAL = this[INTERNAL];
+		const target = _INTERNAL.target,
+		      kind = _INTERNAL.kind,
+		      index = _INTERNAL.index;
+
+		const values = getHeaders(target, kind);
+		const len = values.length;
+		if (index >= len) {
+			return {
+				value: undefined,
+				done: true
 			};
-			return iterator;
 		}
 
-		const HeadersIteratorPrototype = Object.setPrototypeOf({
-			next() {
-				// istanbul ignore if
-				if (!this || Object.getPrototypeOf(this) !== HeadersIteratorPrototype) {
-					throw new TypeError('Value of `this` is not a HeadersIterator');
-				}
+		this[INTERNAL].index = index + 1;
 
-				var _INTERNAL = this[INTERNAL];
-				const target = _INTERNAL.target,
-				      kind = _INTERNAL.kind,
-				      index = _INTERNAL.index;
+		return {
+			value: values[index],
+			done: false
+		};
+	}
+}, Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
 
-				const values = getHeaders(target, kind);
-				const len = values.length;
-				if (index >= len) {
-					return {
-						value: undefined,
-						done: true
-					};
-				}
+Object.defineProperty(HeadersIteratorPrototype, Symbol.toStringTag, {
+	value: 'HeadersIterator',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
 
-				this[INTERNAL].index = index + 1;
+/**
+ * Export the Headers object in a form that Node.js can consume.
+ *
+ * @param   Headers  headers
+ * @return  Object
+ */
+function exportNodeCompatibleHeaders(headers) {
+	const obj = Object.assign({ __proto__: null }, headers[MAP]);
 
-				return {
-					value: values[index],
-					done: false
-				};
-			}
-		}, Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
+	// http.request() only supports string as Host header. This hack makes
+	// specifying custom Host header possible.
+	const hostHeaderKey = find$2(headers[MAP], 'Host');
+	if (hostHeaderKey !== undefined) {
+		obj[hostHeaderKey] = obj[hostHeaderKey][0];
+	}
 
-		Object.defineProperty(HeadersIteratorPrototype, Symbol.toStringTag, {
-			value: 'HeadersIterator',
-			writable: false,
-			enumerable: false,
-			configurable: true
-		});
+	return obj;
+}
 
-		/**
-		 * Export the Headers object in a form that Node.js can consume.
-		 *
-		 * @param   Headers  headers
-		 * @return  Object
-		 */
-		function exportNodeCompatibleHeaders(headers) {
-			const obj = Object.assign({ __proto__: null }, headers[MAP]);
-
-			// http.request() only supports string as Host header. This hack makes
-			// specifying custom Host header possible.
-			const hostHeaderKey = find(headers[MAP], 'Host');
-			if (hostHeaderKey !== undefined) {
-				obj[hostHeaderKey] = obj[hostHeaderKey][0];
-			}
-
-			return obj;
+/**
+ * Create a Headers object from an object of headers, ignoring those that do
+ * not conform to HTTP grammar productions.
+ *
+ * @param   Object  obj  Object of headers
+ * @return  Headers
+ */
+function createHeadersLenient(obj) {
+	const headers = new Headers();
+	for (const name of Object.keys(obj)) {
+		if (invalidTokenRegex.test(name)) {
+			continue;
 		}
-
-		/**
-		 * Create a Headers object from an object of headers, ignoring those that do
-		 * not conform to HTTP grammar productions.
-		 *
-		 * @param   Object  obj  Object of headers
-		 * @return  Headers
-		 */
-		function createHeadersLenient(obj) {
-			const headers = new Headers();
-			for (const name of Object.keys(obj)) {
-				if (invalidTokenRegex.test(name)) {
+		if (Array.isArray(obj[name])) {
+			for (const val of obj[name]) {
+				if (invalidHeaderCharRegex.test(val)) {
 					continue;
 				}
-				if (Array.isArray(obj[name])) {
-					for (const val of obj[name]) {
-						if (invalidHeaderCharRegex.test(val)) {
-							continue;
-						}
-						if (headers[MAP][name] === undefined) {
-							headers[MAP][name] = [val];
-						} else {
-							headers[MAP][name].push(val);
-						}
-					}
-				} else if (!invalidHeaderCharRegex.test(obj[name])) {
-					headers[MAP][name] = [obj[name]];
-				}
-			}
-			return headers;
-		}
-
-		const INTERNALS$1 = Symbol('Response internals');
-
-		// fix an issue where "STATUS_CODES" aren't a named export for node <10
-		const STATUS_CODES = http.STATUS_CODES;
-
-		/**
-		 * Response class
-		 *
-		 * @param   Stream  body  Readable stream
-		 * @param   Object  opts  Response options
-		 * @return  Void
-		 */
-		class Response {
-			constructor() {
-				let body = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-				let opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-				Body.call(this, body, opts);
-
-				const status = opts.status || 200;
-				const headers = new Headers(opts.headers);
-
-				if (body != null && !headers.has('Content-Type')) {
-					const contentType = extractContentType(body);
-					if (contentType) {
-						headers.append('Content-Type', contentType);
-					}
-				}
-
-				this[INTERNALS$1] = {
-					url: opts.url,
-					status,
-					statusText: opts.statusText || STATUS_CODES[status],
-					headers,
-					counter: opts.counter
-				};
-			}
-
-			get url() {
-				return this[INTERNALS$1].url || '';
-			}
-
-			get status() {
-				return this[INTERNALS$1].status;
-			}
-
-			/**
-		  * Convenience property representing if the request ended normally
-		  */
-			get ok() {
-				return this[INTERNALS$1].status >= 200 && this[INTERNALS$1].status < 300;
-			}
-
-			get redirected() {
-				return this[INTERNALS$1].counter > 0;
-			}
-
-			get statusText() {
-				return this[INTERNALS$1].statusText;
-			}
-
-			get headers() {
-				return this[INTERNALS$1].headers;
-			}
-
-			/**
-		  * Clone this response
-		  *
-		  * @return  Response
-		  */
-			clone() {
-				return new Response(clone(this), {
-					url: this.url,
-					status: this.status,
-					statusText: this.statusText,
-					headers: this.headers,
-					ok: this.ok,
-					redirected: this.redirected
-				});
-			}
-		}
-
-		Body.mixIn(Response.prototype);
-
-		Object.defineProperties(Response.prototype, {
-			url: { enumerable: true },
-			status: { enumerable: true },
-			ok: { enumerable: true },
-			redirected: { enumerable: true },
-			statusText: { enumerable: true },
-			headers: { enumerable: true },
-			clone: { enumerable: true }
-		});
-
-		Object.defineProperty(Response.prototype, Symbol.toStringTag, {
-			value: 'Response',
-			writable: false,
-			enumerable: false,
-			configurable: true
-		});
-
-		const INTERNALS$2 = Symbol('Request internals');
-		const URL = Url.URL || whatwgUrl.URL;
-
-		// fix an issue where "format", "parse" aren't a named export for node <10
-		const parse_url = Url.parse;
-		const format_url = Url.format;
-
-		/**
-		 * Wrapper around `new URL` to handle arbitrary URLs
-		 *
-		 * @param  {string} urlStr
-		 * @return {void}
-		 */
-		function parseURL(urlStr) {
-			/*
-		 	Check whether the URL is absolute or not
-		 		Scheme: https://tools.ietf.org/html/rfc3986#section-3.1
-		 	Absolute URL: https://tools.ietf.org/html/rfc3986#section-4.3
-		 */
-			if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.exec(urlStr)) {
-				urlStr = new URL(urlStr).toString();
-			}
-
-			// Fallback to old implementation for arbitrary URLs
-			return parse_url(urlStr);
-		}
-
-		const streamDestructionSupported = 'destroy' in Stream.Readable.prototype;
-
-		/**
-		 * Check if a value is an instance of Request.
-		 *
-		 * @param   Mixed   input
-		 * @return  Boolean
-		 */
-		function isRequest(input) {
-			return typeof input === 'object' && typeof input[INTERNALS$2] === 'object';
-		}
-
-		function isAbortSignal(signal) {
-			const proto = signal && typeof signal === 'object' && Object.getPrototypeOf(signal);
-			return !!(proto && proto.constructor.name === 'AbortSignal');
-		}
-
-		/**
-		 * Request class
-		 *
-		 * @param   Mixed   input  Url or Request instance
-		 * @param   Object  init   Custom options
-		 * @return  Void
-		 */
-		class Request {
-			constructor(input) {
-				let init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-				let parsedURL;
-
-				// normalize input
-				if (!isRequest(input)) {
-					if (input && input.href) {
-						// in order to support Node.js' Url objects; though WHATWG's URL objects
-						// will fall into this branch also (since their `toString()` will return
-						// `href` property anyway)
-						parsedURL = parseURL(input.href);
-					} else {
-						// coerce input to a string before attempting to parse
-						parsedURL = parseURL(`${input}`);
-					}
-					input = {};
+				if (headers[MAP][name] === undefined) {
+					headers[MAP][name] = [val];
 				} else {
-					parsedURL = parseURL(input.url);
+					headers[MAP][name].push(val);
 				}
-
-				let method = init.method || input.method || 'GET';
-				method = method.toUpperCase();
-
-				if ((init.body != null || isRequest(input) && input.body !== null) && (method === 'GET' || method === 'HEAD')) {
-					throw new TypeError('Request with GET/HEAD method cannot have body');
-				}
-
-				let inputBody = init.body != null ? init.body : isRequest(input) && input.body !== null ? clone(input) : null;
-
-				Body.call(this, inputBody, {
-					timeout: init.timeout || input.timeout || 0,
-					size: init.size || input.size || 0
-				});
-
-				const headers = new Headers(init.headers || input.headers || {});
-
-				if (inputBody != null && !headers.has('Content-Type')) {
-					const contentType = extractContentType(inputBody);
-					if (contentType) {
-						headers.append('Content-Type', contentType);
-					}
-				}
-
-				let signal = isRequest(input) ? input.signal : null;
-				if ('signal' in init) signal = init.signal;
-
-				if (signal != null && !isAbortSignal(signal)) {
-					throw new TypeError('Expected signal to be an instanceof AbortSignal');
-				}
-
-				this[INTERNALS$2] = {
-					method,
-					redirect: init.redirect || input.redirect || 'follow',
-					headers,
-					parsedURL,
-					signal
-				};
-
-				// node-fetch-only options
-				this.follow = init.follow !== undefined ? init.follow : input.follow !== undefined ? input.follow : 20;
-				this.compress = init.compress !== undefined ? init.compress : input.compress !== undefined ? input.compress : true;
-				this.counter = init.counter || input.counter || 0;
-				this.agent = init.agent || input.agent;
 			}
+		} else if (!invalidHeaderCharRegex.test(obj[name])) {
+			headers[MAP][name] = [obj[name]];
+		}
+	}
+	return headers;
+}
 
-			get method() {
-				return this[INTERNALS$2].method;
-			}
+const INTERNALS$1 = Symbol('Response internals');
 
-			get url() {
-				return format_url(this[INTERNALS$2].parsedURL);
-			}
+// fix an issue where "STATUS_CODES" aren't a named export for node <10
+const STATUS_CODES = require$$2.STATUS_CODES;
 
-			get headers() {
-				return this[INTERNALS$2].headers;
-			}
+/**
+ * Response class
+ *
+ * @param   Stream  body  Readable stream
+ * @param   Object  opts  Response options
+ * @return  Void
+ */
+class Response {
+	constructor() {
+		let body = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+		let opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-			get redirect() {
-				return this[INTERNALS$2].redirect;
-			}
+		Body.call(this, body, opts);
 
-			get signal() {
-				return this[INTERNALS$2].signal;
-			}
+		const status = opts.status || 200;
+		const headers = new Headers(opts.headers);
 
-			/**
-		  * Clone this request
-		  *
-		  * @return  Request
-		  */
-			clone() {
-				return new Request(this);
+		if (body != null && !headers.has('Content-Type')) {
+			const contentType = extractContentType(body);
+			if (contentType) {
+				headers.append('Content-Type', contentType);
 			}
 		}
 
-		Body.mixIn(Request.prototype);
+		this[INTERNALS$1] = {
+			url: opts.url,
+			status,
+			statusText: opts.statusText || STATUS_CODES[status],
+			headers,
+			counter: opts.counter
+		};
+	}
 
-		Object.defineProperty(Request.prototype, Symbol.toStringTag, {
-			value: 'Request',
-			writable: false,
-			enumerable: false,
-			configurable: true
+	get url() {
+		return this[INTERNALS$1].url || '';
+	}
+
+	get status() {
+		return this[INTERNALS$1].status;
+	}
+
+	/**
+  * Convenience property representing if the request ended normally
+  */
+	get ok() {
+		return this[INTERNALS$1].status >= 200 && this[INTERNALS$1].status < 300;
+	}
+
+	get redirected() {
+		return this[INTERNALS$1].counter > 0;
+	}
+
+	get statusText() {
+		return this[INTERNALS$1].statusText;
+	}
+
+	get headers() {
+		return this[INTERNALS$1].headers;
+	}
+
+	/**
+  * Clone this response
+  *
+  * @return  Response
+  */
+	clone() {
+		return new Response(clone$1(this), {
+			url: this.url,
+			status: this.status,
+			statusText: this.statusText,
+			headers: this.headers,
+			ok: this.ok,
+			redirected: this.redirected
+		});
+	}
+}
+
+Body.mixIn(Response.prototype);
+
+Object.defineProperties(Response.prototype, {
+	url: { enumerable: true },
+	status: { enumerable: true },
+	ok: { enumerable: true },
+	redirected: { enumerable: true },
+	statusText: { enumerable: true },
+	headers: { enumerable: true },
+	clone: { enumerable: true }
+});
+
+Object.defineProperty(Response.prototype, Symbol.toStringTag, {
+	value: 'Response',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+const INTERNALS$2 = Symbol('Request internals');
+const URL$1 = Url.URL || whatwgUrl.URL;
+
+// fix an issue where "format", "parse" aren't a named export for node <10
+const parse_url = Url.parse;
+const format_url = Url.format;
+
+/**
+ * Wrapper around `new URL` to handle arbitrary URLs
+ *
+ * @param  {string} urlStr
+ * @return {void}
+ */
+function parseURL(urlStr) {
+	/*
+ 	Check whether the URL is absolute or not
+ 		Scheme: https://tools.ietf.org/html/rfc3986#section-3.1
+ 	Absolute URL: https://tools.ietf.org/html/rfc3986#section-4.3
+ */
+	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.exec(urlStr)) {
+		urlStr = new URL$1(urlStr).toString();
+	}
+
+	// Fallback to old implementation for arbitrary URLs
+	return parse_url(urlStr);
+}
+
+const streamDestructionSupported = 'destroy' in Stream.Readable.prototype;
+
+/**
+ * Check if a value is an instance of Request.
+ *
+ * @param   Mixed   input
+ * @return  Boolean
+ */
+function isRequest(input) {
+	return typeof input === 'object' && typeof input[INTERNALS$2] === 'object';
+}
+
+function isAbortSignal(signal) {
+	const proto = signal && typeof signal === 'object' && Object.getPrototypeOf(signal);
+	return !!(proto && proto.constructor.name === 'AbortSignal');
+}
+
+/**
+ * Request class
+ *
+ * @param   Mixed   input  Url or Request instance
+ * @param   Object  init   Custom options
+ * @return  Void
+ */
+class Request {
+	constructor(input) {
+		let init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+		let parsedURL;
+
+		// normalize input
+		if (!isRequest(input)) {
+			if (input && input.href) {
+				// in order to support Node.js' Url objects; though WHATWG's URL objects
+				// will fall into this branch also (since their `toString()` will return
+				// `href` property anyway)
+				parsedURL = parseURL(input.href);
+			} else {
+				// coerce input to a string before attempting to parse
+				parsedURL = parseURL(`${input}`);
+			}
+			input = {};
+		} else {
+			parsedURL = parseURL(input.url);
+		}
+
+		let method = init.method || input.method || 'GET';
+		method = method.toUpperCase();
+
+		if ((init.body != null || isRequest(input) && input.body !== null) && (method === 'GET' || method === 'HEAD')) {
+			throw new TypeError('Request with GET/HEAD method cannot have body');
+		}
+
+		let inputBody = init.body != null ? init.body : isRequest(input) && input.body !== null ? clone$1(input) : null;
+
+		Body.call(this, inputBody, {
+			timeout: init.timeout || input.timeout || 0,
+			size: init.size || input.size || 0
 		});
 
-		Object.defineProperties(Request.prototype, {
-			method: { enumerable: true },
-			url: { enumerable: true },
-			headers: { enumerable: true },
-			redirect: { enumerable: true },
-			clone: { enumerable: true },
-			signal: { enumerable: true }
-		});
+		const headers = new Headers(init.headers || input.headers || {});
 
-		/**
-		 * Convert a Request to Node.js http request options.
-		 *
-		 * @param   Request  A Request instance
-		 * @return  Object   The options object to be passed to http.request
-		 */
-		function getNodeRequestOptions(request) {
-			const parsedURL = request[INTERNALS$2].parsedURL;
-			const headers = new Headers(request[INTERNALS$2].headers);
-
-			// fetch step 1.3
-			if (!headers.has('Accept')) {
-				headers.set('Accept', '*/*');
+		if (inputBody != null && !headers.has('Content-Type')) {
+			const contentType = extractContentType(inputBody);
+			if (contentType) {
+				headers.append('Content-Type', contentType);
 			}
+		}
 
-			// Basic fetch
-			if (!parsedURL.protocol || !parsedURL.hostname) {
-				throw new TypeError('Only absolute URLs are supported');
-			}
+		let signal = isRequest(input) ? input.signal : null;
+		if ('signal' in init) signal = init.signal;
 
-			if (!/^https?:$/.test(parsedURL.protocol)) {
-				throw new TypeError('Only HTTP(S) protocols are supported');
-			}
+		if (signal != null && !isAbortSignal(signal)) {
+			throw new TypeError('Expected signal to be an instanceof AbortSignal');
+		}
 
-			if (request.signal && request.body instanceof Stream.Readable && !streamDestructionSupported) {
-				throw new Error('Cancellation of streamed requests with AbortSignal is not supported in node < 8');
-			}
+		this[INTERNALS$2] = {
+			method,
+			redirect: init.redirect || input.redirect || 'follow',
+			headers,
+			parsedURL,
+			signal
+		};
 
-			// HTTP-network-or-cache fetch steps 2.4-2.7
-			let contentLengthValue = null;
-			if (request.body == null && /^(POST|PUT)$/i.test(request.method)) {
-				contentLengthValue = '0';
-			}
-			if (request.body != null) {
-				const totalBytes = getTotalBytes(request);
-				if (typeof totalBytes === 'number') {
-					contentLengthValue = String(totalBytes);
-				}
-			}
-			if (contentLengthValue) {
-				headers.set('Content-Length', contentLengthValue);
-			}
+		// node-fetch-only options
+		this.follow = init.follow !== undefined ? init.follow : input.follow !== undefined ? input.follow : 20;
+		this.compress = init.compress !== undefined ? init.compress : input.compress !== undefined ? input.compress : true;
+		this.counter = init.counter || input.counter || 0;
+		this.agent = init.agent || input.agent;
+	}
 
-			// HTTP-network-or-cache fetch step 2.11
-			if (!headers.has('User-Agent')) {
-				headers.set('User-Agent', 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)');
+	get method() {
+		return this[INTERNALS$2].method;
+	}
+
+	get url() {
+		return format_url(this[INTERNALS$2].parsedURL);
+	}
+
+	get headers() {
+		return this[INTERNALS$2].headers;
+	}
+
+	get redirect() {
+		return this[INTERNALS$2].redirect;
+	}
+
+	get signal() {
+		return this[INTERNALS$2].signal;
+	}
+
+	/**
+  * Clone this request
+  *
+  * @return  Request
+  */
+	clone() {
+		return new Request(this);
+	}
+}
+
+Body.mixIn(Request.prototype);
+
+Object.defineProperty(Request.prototype, Symbol.toStringTag, {
+	value: 'Request',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperties(Request.prototype, {
+	method: { enumerable: true },
+	url: { enumerable: true },
+	headers: { enumerable: true },
+	redirect: { enumerable: true },
+	clone: { enumerable: true },
+	signal: { enumerable: true }
+});
+
+/**
+ * Convert a Request to Node.js http request options.
+ *
+ * @param   Request  A Request instance
+ * @return  Object   The options object to be passed to http.request
+ */
+function getNodeRequestOptions(request) {
+	const parsedURL = request[INTERNALS$2].parsedURL;
+	const headers = new Headers(request[INTERNALS$2].headers);
+
+	// fetch step 1.3
+	if (!headers.has('Accept')) {
+		headers.set('Accept', '*/*');
+	}
+
+	// Basic fetch
+	if (!parsedURL.protocol || !parsedURL.hostname) {
+		throw new TypeError('Only absolute URLs are supported');
+	}
+
+	if (!/^https?:$/.test(parsedURL.protocol)) {
+		throw new TypeError('Only HTTP(S) protocols are supported');
+	}
+
+	if (request.signal && request.body instanceof Stream.Readable && !streamDestructionSupported) {
+		throw new Error('Cancellation of streamed requests with AbortSignal is not supported in node < 8');
+	}
+
+	// HTTP-network-or-cache fetch steps 2.4-2.7
+	let contentLengthValue = null;
+	if (request.body == null && /^(POST|PUT)$/i.test(request.method)) {
+		contentLengthValue = '0';
+	}
+	if (request.body != null) {
+		const totalBytes = getTotalBytes(request);
+		if (typeof totalBytes === 'number') {
+			contentLengthValue = String(totalBytes);
+		}
+	}
+	if (contentLengthValue) {
+		headers.set('Content-Length', contentLengthValue);
+	}
+
+	// HTTP-network-or-cache fetch step 2.11
+	if (!headers.has('User-Agent')) {
+		headers.set('User-Agent', 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)');
+	}
+
+	// HTTP-network-or-cache fetch step 2.15
+	if (request.compress && !headers.has('Accept-Encoding')) {
+		headers.set('Accept-Encoding', 'gzip,deflate');
+	}
+
+	let agent = request.agent;
+	if (typeof agent === 'function') {
+		agent = agent(parsedURL);
+	}
+
+	// HTTP-network fetch step 4.2
+	// chunked encoding is handled by Node.js
+
+	return Object.assign({}, parsedURL, {
+		method: request.method,
+		headers: exportNodeCompatibleHeaders(headers),
+		agent
+	});
+}
+
+/**
+ * abort-error.js
+ *
+ * AbortError interface for cancelled requests
+ */
+
+/**
+ * Create AbortError instance
+ *
+ * @param   String      message      Error message for human
+ * @return  AbortError
+ */
+function AbortError(message) {
+  Error.call(this, message);
+
+  this.type = 'aborted';
+  this.message = message;
+
+  // hide custom error implementation details from end-users
+  Error.captureStackTrace(this, this.constructor);
+}
+
+AbortError.prototype = Object.create(Error.prototype);
+AbortError.prototype.constructor = AbortError;
+AbortError.prototype.name = 'AbortError';
+
+const URL$1$1 = Url.URL || whatwgUrl.URL;
+
+// fix an issue where "PassThrough", "resolve" aren't a named export for node <10
+const PassThrough$1 = Stream.PassThrough;
+
+const isDomainOrSubdomain = function isDomainOrSubdomain(destination, original) {
+	const orig = new URL$1$1(original).hostname;
+	const dest = new URL$1$1(destination).hostname;
+
+	return orig === dest || orig[orig.length - dest.length - 1] === '.' && orig.endsWith(dest);
+};
+
+/**
+ * isSameProtocol reports whether the two provided URLs use the same protocol.
+ *
+ * Both domains must already be in canonical form.
+ * @param {string|URL} original
+ * @param {string|URL} destination
+ */
+const isSameProtocol = function isSameProtocol(destination, original) {
+	const orig = new URL$1$1(original).protocol;
+	const dest = new URL$1$1(destination).protocol;
+
+	return orig === dest;
+};
+
+/**
+ * Fetch function
+ *
+ * @param   Mixed    url   Absolute url or Request instance
+ * @param   Object   opts  Fetch options
+ * @return  Promise
+ */
+function fetch$1(url, opts) {
+
+	// allow custom promise
+	if (!fetch$1.Promise) {
+		throw new Error('native promise missing, set fetch.Promise to your favorite alternative');
+	}
+
+	Body.Promise = fetch$1.Promise;
+
+	// wrap http.request into fetch
+	return new fetch$1.Promise(function (resolve, reject) {
+		// build request object
+		const request = new Request(url, opts);
+		const options = getNodeRequestOptions(request);
+
+		const send = (options.protocol === 'https:' ? require$$3 : require$$2).request;
+		const signal = request.signal;
+
+		let response = null;
+
+		const abort = function abort() {
+			let error = new AbortError('The user aborted a request.');
+			reject(error);
+			if (request.body && request.body instanceof Stream.Readable) {
+				destroyStream(request.body, error);
 			}
+			if (!response || !response.body) return;
+			response.body.emit('error', error);
+		};
 
-			// HTTP-network-or-cache fetch step 2.15
-			if (request.compress && !headers.has('Accept-Encoding')) {
-				headers.set('Accept-Encoding', 'gzip,deflate');
-			}
+		if (signal && signal.aborted) {
+			abort();
+			return;
+		}
 
-			let agent = request.agent;
-			if (typeof agent === 'function') {
-				agent = agent(parsedURL);
-			}
+		const abortAndFinalize = function abortAndFinalize() {
+			abort();
+			finalize();
+		};
 
-			// HTTP-network fetch step 4.2
-			// chunked encoding is handled by Node.js
+		// send request
+		const req = send(options);
+		let reqTimeout;
 
-			return Object.assign({}, parsedURL, {
-				method: request.method,
-				headers: exportNodeCompatibleHeaders(headers),
-				agent
+		if (signal) {
+			signal.addEventListener('abort', abortAndFinalize);
+		}
+
+		function finalize() {
+			req.abort();
+			if (signal) signal.removeEventListener('abort', abortAndFinalize);
+			clearTimeout(reqTimeout);
+		}
+
+		if (request.timeout) {
+			req.once('socket', function (socket) {
+				reqTimeout = setTimeout(function () {
+					reject(new FetchError(`network timeout at: ${request.url}`, 'request-timeout'));
+					finalize();
+				}, request.timeout);
 			});
 		}
 
-		/**
-		 * abort-error.js
-		 *
-		 * AbortError interface for cancelled requests
-		 */
+		req.on('error', function (err) {
+			reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, 'system', err));
 
-		/**
-		 * Create AbortError instance
-		 *
-		 * @param   String      message      Error message for human
-		 * @return  AbortError
-		 */
-		function AbortError(message) {
-		  Error.call(this, message);
-
-		  this.type = 'aborted';
-		  this.message = message;
-
-		  // hide custom error implementation details from end-users
-		  Error.captureStackTrace(this, this.constructor);
-		}
-
-		AbortError.prototype = Object.create(Error.prototype);
-		AbortError.prototype.constructor = AbortError;
-		AbortError.prototype.name = 'AbortError';
-
-		const URL$1 = Url.URL || whatwgUrl.URL;
-
-		// fix an issue where "PassThrough", "resolve" aren't a named export for node <10
-		const PassThrough$1 = Stream.PassThrough;
-
-		const isDomainOrSubdomain = function isDomainOrSubdomain(destination, original) {
-			const orig = new URL$1(original).hostname;
-			const dest = new URL$1(destination).hostname;
-
-			return orig === dest || orig[orig.length - dest.length - 1] === '.' && orig.endsWith(dest);
-		};
-
-		/**
-		 * isSameProtocol reports whether the two provided URLs use the same protocol.
-		 *
-		 * Both domains must already be in canonical form.
-		 * @param {string|URL} original
-		 * @param {string|URL} destination
-		 */
-		const isSameProtocol = function isSameProtocol(destination, original) {
-			const orig = new URL$1(original).protocol;
-			const dest = new URL$1(destination).protocol;
-
-			return orig === dest;
-		};
-
-		/**
-		 * Fetch function
-		 *
-		 * @param   Mixed    url   Absolute url or Request instance
-		 * @param   Object   opts  Fetch options
-		 * @return  Promise
-		 */
-		function fetch(url, opts) {
-
-			// allow custom promise
-			if (!fetch.Promise) {
-				throw new Error('native promise missing, set fetch.Promise to your favorite alternative');
+			if (response && response.body) {
+				destroyStream(response.body, err);
 			}
 
-			Body.Promise = fetch.Promise;
+			finalize();
+		});
 
-			// wrap http.request into fetch
-			return new fetch.Promise(function (resolve, reject) {
-				// build request object
-				const request = new Request(url, opts);
-				const options = getNodeRequestOptions(request);
+		fixResponseChunkedTransferBadEnding(req, function (err) {
+			if (signal && signal.aborted) {
+				return;
+			}
 
-				const send = (options.protocol === 'https:' ? https : http).request;
-				const signal = request.signal;
+			if (response && response.body) {
+				destroyStream(response.body, err);
+			}
+		});
 
-				let response = null;
+		/* c8 ignore next 18 */
+		if (parseInt(process.version.substring(1)) < 14) {
+			// Before Node.js 14, pipeline() does not fully support async iterators and does not always
+			// properly handle when the socket close/end events are out of order.
+			req.on('socket', function (s) {
+				s.addListener('close', function (hadError) {
+					// if a data listener is still present we didn't end cleanly
+					const hasDataListener = s.listenerCount('data') > 0;
 
-				const abort = function abort() {
-					let error = new AbortError('The user aborted a request.');
-					reject(error);
-					if (request.body && request.body instanceof Stream.Readable) {
-						destroyStream(request.body, error);
+					// if end happened before close but the socket didn't emit an error, do it now
+					if (response && hasDataListener && !hadError && !(signal && signal.aborted)) {
+						const err = new Error('Premature close');
+						err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+						response.body.emit('error', err);
 					}
-					if (!response || !response.body) return;
-					response.body.emit('error', error);
-				};
+				});
+			});
+		}
 
-				if (signal && signal.aborted) {
-					abort();
-					return;
+		req.on('response', function (res) {
+			clearTimeout(reqTimeout);
+
+			const headers = createHeadersLenient(res.headers);
+
+			// HTTP fetch step 5
+			if (fetch$1.isRedirect(res.statusCode)) {
+				// HTTP fetch step 5.2
+				const location = headers.get('Location');
+
+				// HTTP fetch step 5.3
+				let locationURL = null;
+				try {
+					locationURL = location === null ? null : new URL$1$1(location, request.url).toString();
+				} catch (err) {
+					// error here can only be invalid URL in Location: header
+					// do not throw when options.redirect == manual
+					// let the user extract the errorneous redirect URL
+					if (request.redirect !== 'manual') {
+						reject(new FetchError(`uri requested responds with an invalid redirect URL: ${location}`, 'invalid-redirect'));
+						finalize();
+						return;
+					}
 				}
 
-				const abortAndFinalize = function abortAndFinalize() {
-					abort();
-					finalize();
-				};
+				// HTTP fetch step 5.5
+				switch (request.redirect) {
+					case 'error':
+						reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, 'no-redirect'));
+						finalize();
+						return;
+					case 'manual':
+						// node-fetch-specific step: make manual redirect a bit easier to use by setting the Location header value to the resolved URL.
+						if (locationURL !== null) {
+							// handle corrupted header
+							try {
+								headers.set('Location', locationURL);
+							} catch (err) {
+								// istanbul ignore next: nodejs server prevent invalid response headers, we can't test this through normal request
+								reject(err);
+							}
+						}
+						break;
+					case 'follow':
+						// HTTP-redirect fetch step 2
+						if (locationURL === null) {
+							break;
+						}
 
-				// send request
-				const req = send(options);
-				let reqTimeout;
-
-				if (signal) {
-					signal.addEventListener('abort', abortAndFinalize);
-				}
-
-				function finalize() {
-					req.abort();
-					if (signal) signal.removeEventListener('abort', abortAndFinalize);
-					clearTimeout(reqTimeout);
-				}
-
-				if (request.timeout) {
-					req.once('socket', function (socket) {
-						reqTimeout = setTimeout(function () {
-							reject(new FetchError(`network timeout at: ${request.url}`, 'request-timeout'));
+						// HTTP-redirect fetch step 5
+						if (request.counter >= request.follow) {
+							reject(new FetchError(`maximum redirect reached at: ${request.url}`, 'max-redirect'));
 							finalize();
-						}, request.timeout);
-					});
-				}
+							return;
+						}
 
-				req.on('error', function (err) {
-					reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, 'system', err));
+						// HTTP-redirect fetch step 6 (counter increment)
+						// Create a new Request object.
+						const requestOpts = {
+							headers: new Headers(request.headers),
+							follow: request.follow,
+							counter: request.counter + 1,
+							agent: request.agent,
+							compress: request.compress,
+							method: request.method,
+							body: request.body,
+							signal: request.signal,
+							timeout: request.timeout,
+							size: request.size
+						};
 
-					if (response && response.body) {
-						destroyStream(response.body, err);
-					}
-
-					finalize();
-				});
-
-				fixResponseChunkedTransferBadEnding(req, function (err) {
-					if (signal && signal.aborted) {
-						return;
-					}
-
-					if (response && response.body) {
-						destroyStream(response.body, err);
-					}
-				});
-
-				/* c8 ignore next 18 */
-				if (parseInt(process.version.substring(1)) < 14) {
-					// Before Node.js 14, pipeline() does not fully support async iterators and does not always
-					// properly handle when the socket close/end events are out of order.
-					req.on('socket', function (s) {
-						s.addListener('close', function (hadError) {
-							// if a data listener is still present we didn't end cleanly
-							const hasDataListener = s.listenerCount('data') > 0;
-
-							// if end happened before close but the socket didn't emit an error, do it now
-							if (response && hasDataListener && !hadError && !(signal && signal.aborted)) {
-								const err = new Error('Premature close');
-								err.code = 'ERR_STREAM_PREMATURE_CLOSE';
-								response.body.emit('error', err);
-							}
-						});
-					});
-				}
-
-				req.on('response', function (res) {
-					clearTimeout(reqTimeout);
-
-					const headers = createHeadersLenient(res.headers);
-
-					// HTTP fetch step 5
-					if (fetch.isRedirect(res.statusCode)) {
-						// HTTP fetch step 5.2
-						const location = headers.get('Location');
-
-						// HTTP fetch step 5.3
-						let locationURL = null;
-						try {
-							locationURL = location === null ? null : new URL$1(location, request.url).toString();
-						} catch (err) {
-							// error here can only be invalid URL in Location: header
-							// do not throw when options.redirect == manual
-							// let the user extract the errorneous redirect URL
-							if (request.redirect !== 'manual') {
-								reject(new FetchError(`uri requested responds with an invalid redirect URL: ${location}`, 'invalid-redirect'));
-								finalize();
-								return;
+						if (!isDomainOrSubdomain(request.url, locationURL) || !isSameProtocol(request.url, locationURL)) {
+							for (const name of ['authorization', 'www-authenticate', 'cookie', 'cookie2']) {
+								requestOpts.headers.delete(name);
 							}
 						}
 
-						// HTTP fetch step 5.5
-						switch (request.redirect) {
-							case 'error':
-								reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, 'no-redirect'));
-								finalize();
-								return;
-							case 'manual':
-								// node-fetch-specific step: make manual redirect a bit easier to use by setting the Location header value to the resolved URL.
-								if (locationURL !== null) {
-									// handle corrupted header
-									try {
-										headers.set('Location', locationURL);
-									} catch (err) {
-										// istanbul ignore next: nodejs server prevent invalid response headers, we can't test this through normal request
-										reject(err);
-									}
-								}
-								break;
-							case 'follow':
-								// HTTP-redirect fetch step 2
-								if (locationURL === null) {
-									break;
-								}
-
-								// HTTP-redirect fetch step 5
-								if (request.counter >= request.follow) {
-									reject(new FetchError(`maximum redirect reached at: ${request.url}`, 'max-redirect'));
-									finalize();
-									return;
-								}
-
-								// HTTP-redirect fetch step 6 (counter increment)
-								// Create a new Request object.
-								const requestOpts = {
-									headers: new Headers(request.headers),
-									follow: request.follow,
-									counter: request.counter + 1,
-									agent: request.agent,
-									compress: request.compress,
-									method: request.method,
-									body: request.body,
-									signal: request.signal,
-									timeout: request.timeout,
-									size: request.size
-								};
-
-								if (!isDomainOrSubdomain(request.url, locationURL) || !isSameProtocol(request.url, locationURL)) {
-									for (const name of ['authorization', 'www-authenticate', 'cookie', 'cookie2']) {
-										requestOpts.headers.delete(name);
-									}
-								}
-
-								// HTTP-redirect fetch step 9
-								if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
-									reject(new FetchError('Cannot follow redirect with body being a readable stream', 'unsupported-redirect'));
-									finalize();
-									return;
-								}
-
-								// HTTP-redirect fetch step 11
-								if (res.statusCode === 303 || (res.statusCode === 301 || res.statusCode === 302) && request.method === 'POST') {
-									requestOpts.method = 'GET';
-									requestOpts.body = undefined;
-									requestOpts.headers.delete('content-length');
-								}
-
-								// HTTP-redirect fetch step 15
-								resolve(fetch(new Request(locationURL, requestOpts)));
-								finalize();
-								return;
+						// HTTP-redirect fetch step 9
+						if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
+							reject(new FetchError('Cannot follow redirect with body being a readable stream', 'unsupported-redirect'));
+							finalize();
+							return;
 						}
-					}
 
-					// prepare response
-					res.once('end', function () {
-						if (signal) signal.removeEventListener('abort', abortAndFinalize);
-					});
-					let body = res.pipe(new PassThrough$1());
+						// HTTP-redirect fetch step 11
+						if (res.statusCode === 303 || (res.statusCode === 301 || res.statusCode === 302) && request.method === 'POST') {
+							requestOpts.method = 'GET';
+							requestOpts.body = undefined;
+							requestOpts.headers.delete('content-length');
+						}
 
-					const response_options = {
-						url: request.url,
-						status: res.statusCode,
-						statusText: res.statusMessage,
-						headers: headers,
-						size: request.size,
-						timeout: request.timeout,
-						counter: request.counter
-					};
-
-					// HTTP-network fetch step 12.1.1.3
-					const codings = headers.get('Content-Encoding');
-
-					// HTTP-network fetch step 12.1.1.4: handle content codings
-
-					// in following scenarios we ignore compression support
-					// 1. compression support is disabled
-					// 2. HEAD request
-					// 3. no Content-Encoding header
-					// 4. no content response (204)
-					// 5. content not modified response (304)
-					if (!request.compress || request.method === 'HEAD' || codings === null || res.statusCode === 204 || res.statusCode === 304) {
-						response = new Response(body, response_options);
-						resolve(response);
+						// HTTP-redirect fetch step 15
+						resolve(fetch$1(new Request(locationURL, requestOpts)));
+						finalize();
 						return;
+				}
+			}
+
+			// prepare response
+			res.once('end', function () {
+				if (signal) signal.removeEventListener('abort', abortAndFinalize);
+			});
+			let body = res.pipe(new PassThrough$1());
+
+			const response_options = {
+				url: request.url,
+				status: res.statusCode,
+				statusText: res.statusMessage,
+				headers: headers,
+				size: request.size,
+				timeout: request.timeout,
+				counter: request.counter
+			};
+
+			// HTTP-network fetch step 12.1.1.3
+			const codings = headers.get('Content-Encoding');
+
+			// HTTP-network fetch step 12.1.1.4: handle content codings
+
+			// in following scenarios we ignore compression support
+			// 1. compression support is disabled
+			// 2. HEAD request
+			// 3. no Content-Encoding header
+			// 4. no content response (204)
+			// 5. content not modified response (304)
+			if (!request.compress || request.method === 'HEAD' || codings === null || res.statusCode === 204 || res.statusCode === 304) {
+				response = new Response(body, response_options);
+				resolve(response);
+				return;
+			}
+
+			// For Node v6+
+			// Be less strict when decoding compressed responses, since sometimes
+			// servers send slightly invalid responses that are still accepted
+			// by common browsers.
+			// Always using Z_SYNC_FLUSH is what cURL does.
+			const zlibOptions = {
+				flush: zlib.Z_SYNC_FLUSH,
+				finishFlush: zlib.Z_SYNC_FLUSH
+			};
+
+			// for gzip
+			if (codings == 'gzip' || codings == 'x-gzip') {
+				body = body.pipe(zlib.createGunzip(zlibOptions));
+				response = new Response(body, response_options);
+				resolve(response);
+				return;
+			}
+
+			// for deflate
+			if (codings == 'deflate' || codings == 'x-deflate') {
+				// handle the infamous raw deflate response from old servers
+				// a hack for old IIS and Apache servers
+				const raw = res.pipe(new PassThrough$1());
+				raw.once('data', function (chunk) {
+					// see http://stackoverflow.com/questions/37519828
+					if ((chunk[0] & 0x0F) === 0x08) {
+						body = body.pipe(zlib.createInflate());
+					} else {
+						body = body.pipe(zlib.createInflateRaw());
 					}
-
-					// For Node v6+
-					// Be less strict when decoding compressed responses, since sometimes
-					// servers send slightly invalid responses that are still accepted
-					// by common browsers.
-					// Always using Z_SYNC_FLUSH is what cURL does.
-					const zlibOptions = {
-						flush: zlib.Z_SYNC_FLUSH,
-						finishFlush: zlib.Z_SYNC_FLUSH
-					};
-
-					// for gzip
-					if (codings == 'gzip' || codings == 'x-gzip') {
-						body = body.pipe(zlib.createGunzip(zlibOptions));
-						response = new Response(body, response_options);
-						resolve(response);
-						return;
-					}
-
-					// for deflate
-					if (codings == 'deflate' || codings == 'x-deflate') {
-						// handle the infamous raw deflate response from old servers
-						// a hack for old IIS and Apache servers
-						const raw = res.pipe(new PassThrough$1());
-						raw.once('data', function (chunk) {
-							// see http://stackoverflow.com/questions/37519828
-							if ((chunk[0] & 0x0F) === 0x08) {
-								body = body.pipe(zlib.createInflate());
-							} else {
-								body = body.pipe(zlib.createInflateRaw());
-							}
-							response = new Response(body, response_options);
-							resolve(response);
-						});
-						raw.on('end', function () {
-							// some old IIS servers return zero-length OK deflate responses, so 'data' is never emitted.
-							if (!response) {
-								response = new Response(body, response_options);
-								resolve(response);
-							}
-						});
-						return;
-					}
-
-					// for br
-					if (codings == 'br' && typeof zlib.createBrotliDecompress === 'function') {
-						body = body.pipe(zlib.createBrotliDecompress());
-						response = new Response(body, response_options);
-						resolve(response);
-						return;
-					}
-
-					// otherwise, use response as-is
 					response = new Response(body, response_options);
 					resolve(response);
 				});
+				raw.on('end', function () {
+					// some old IIS servers return zero-length OK deflate responses, so 'data' is never emitted.
+					if (!response) {
+						response = new Response(body, response_options);
+						resolve(response);
+					}
+				});
+				return;
+			}
 
-				writeToStream(req, request);
-			});
-		}
-		function fixResponseChunkedTransferBadEnding(request, errorCallback) {
-			let socket;
+			// for br
+			if (codings == 'br' && typeof zlib.createBrotliDecompress === 'function') {
+				body = body.pipe(zlib.createBrotliDecompress());
+				response = new Response(body, response_options);
+				resolve(response);
+				return;
+			}
 
-			request.on('socket', function (s) {
-				socket = s;
-			});
+			// otherwise, use response as-is
+			response = new Response(body, response_options);
+			resolve(response);
+		});
 
-			request.on('response', function (response) {
-				const headers = response.headers;
+		writeToStream(req, request);
+	});
+}
+function fixResponseChunkedTransferBadEnding(request, errorCallback) {
+	let socket;
 
-				if (headers['transfer-encoding'] === 'chunked' && !headers['content-length']) {
-					response.once('close', function (hadError) {
-						// tests for socket presence, as in some situations the
-						// the 'socket' event is not triggered for the request
-						// (happens in deno), avoids `TypeError`
-						// if a data listener is still present we didn't end cleanly
-						const hasDataListener = socket && socket.listenerCount('data') > 0;
+	request.on('socket', function (s) {
+		socket = s;
+	});
 
-						if (hasDataListener && !hadError) {
-							const err = new Error('Premature close');
-							err.code = 'ERR_STREAM_PREMATURE_CLOSE';
-							errorCallback(err);
-						}
-					});
+	request.on('response', function (response) {
+		const headers = response.headers;
+
+		if (headers['transfer-encoding'] === 'chunked' && !headers['content-length']) {
+			response.once('close', function (hadError) {
+				// tests for socket presence, as in some situations the
+				// the 'socket' event is not triggered for the request
+				// (happens in deno), avoids `TypeError`
+				// if a data listener is still present we didn't end cleanly
+				const hasDataListener = socket && socket.listenerCount('data') > 0;
+
+				if (hasDataListener && !hadError) {
+					const err = new Error('Premature close');
+					err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+					errorCallback(err);
 				}
 			});
 		}
-
-		function destroyStream(stream, err) {
-			if (stream.destroy) {
-				stream.destroy(err);
-			} else {
-				// node < 8
-				stream.emit('error', err);
-				stream.end();
-			}
-		}
-
-		/**
-		 * Redirect code matching
-		 *
-		 * @param   Number   code  Status code
-		 * @return  Boolean
-		 */
-		fetch.isRedirect = function (code) {
-			return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
-		};
-
-		// expose Promise
-		fetch.Promise = commonjsGlobal.Promise;
-
-		module.exports = exports = fetch;
-		Object.defineProperty(exports, "__esModule", { value: true });
-		exports.default = exports;
-		exports.Headers = Headers;
-		exports.Request = Request;
-		exports.Response = Response;
-		exports.FetchError = FetchError;
-		exports.AbortError = AbortError; 
-	} (lib$n, lib$n.exports));
-	return lib$n.exports;
+	});
 }
+
+function destroyStream(stream, err) {
+	if (stream.destroy) {
+		stream.destroy(err);
+	} else {
+		// node < 8
+		stream.emit('error', err);
+		stream.end();
+	}
+}
+
+/**
+ * Redirect code matching
+ *
+ * @param   Number   code  Status code
+ * @return  Boolean
+ */
+fetch$1.isRedirect = function (code) {
+	return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
+};
+
+// expose Promise
+fetch$1.Promise = global.Promise;
+
+var lib$m = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	AbortError: AbortError,
+	FetchError: FetchError,
+	Headers: Headers,
+	Request: Request,
+	Response: Response,
+	default: fetch$1
+});
+
+var require$$0 = /*@__PURE__*/getAugmentedNamespace(lib$m);
 
 var hasRequiredFetchNpmNode;
 
@@ -112189,7 +110908,7 @@ function requireFetchNpmNode () {
 	hasRequiredFetchNpmNode = 1;
 	(function (module) {
 
-		var realFetch = requireLib$o();
+		var realFetch = require$$0;
 		module.exports = function(url, options) {
 			if (/^\/\//.test(url)) {
 				url = 'https:' + url;
@@ -112210,14 +110929,14 @@ function requireFetchNpmNode () {
 var hasRequiredFetch;
 
 function requireFetch () {
-	if (hasRequiredFetch) return fetch$1;
+	if (hasRequiredFetch) return fetch$2;
 	hasRequiredFetch = 1;
-	Object.defineProperty(fetch$1, "__esModule", { value: true });
-	fetch$1.fetch = void 0;
+	Object.defineProperty(fetch$2, "__esModule", { value: true });
+	fetch$2.fetch = void 0;
 	const ismorphicFetch = requireFetchNpmNode();
 	const hasFetch = () => typeof window !== 'undefined' && !!window.fetch;
-	fetch$1.fetch = hasFetch() ? window.fetch.bind(window) : ismorphicFetch;
-	return fetch$1;
+	fetch$2.fetch = hasFetch() ? window.fetch.bind(window) : ismorphicFetch;
+	return fetch$2;
 }
 
 var timeout = {};
@@ -112990,7 +111709,7 @@ function requireDate () {
 	if (hasRequiredDate) return date;
 	hasRequiredDate = 1;
 	Object.defineProperty(date, "__esModule", { value: true });
-	const moment_1 = requireLib$r();
+	const moment_1 = requireLib$q();
 	date.default = moment_1.default;
 	return date;
 }
@@ -116362,7 +115081,7 @@ var hasRequiredNanoid;
 function requireNanoid () {
 	if (hasRequiredNanoid) return nanoid_1;
 	hasRequiredNanoid = 1;
-	let crypto = require$$0$2;
+	let crypto = require$$0$3;
 
 	let { urlAlphabet } = requireUrlAlphabet();
 
@@ -116546,7 +115265,7 @@ function requireIs () {
 	if (hasRequiredIs) return is;
 	hasRequiredIs = 1;
 	Object.defineProperty(is, "__esModule", { value: true });
-	const is$1 = requireLib$s();
+	const is$1 = requireLib$r();
 	is.default = is$1;
 	return is;
 }
@@ -116716,7 +115435,7 @@ function requireMs$1 () {
 	Object.defineProperty(ms, "__esModule", { value: true });
 	ms.ms = void 0;
 	const match_1 = requireLib$4();
-	const is_1 = requireLib$s();
+	const is_1 = requireLib$r();
 	const ONE_SECOND = 1000;
 	const ONE_MINUTE = 60 * ONE_SECOND;
 	const ONE_HOUR = 60 * ONE_MINUTE;
@@ -118914,9 +117633,9 @@ function requireDist () {
 	hasRequiredDist = 1;
 
 	if (process.env.NODE_ENV === 'production') {
-	  dist.exports = requireImmer_cjs_production_min();
+	  dist.exports = /*@__PURE__*/ requireImmer_cjs_production_min();
 	} else {
-	  dist.exports = requireImmer_cjs_development();
+	  dist.exports = /*@__PURE__*/ requireImmer_cjs_development();
 	}
 	return dist.exports;
 }
@@ -119448,7 +118167,7 @@ function requireLib$2 () {
 	hasRequiredLib$2 = 1;
 	(function (exports) {
 		Object.defineProperty(exports, "__esModule", { value: true });
-		const is_1 = requireLib$s();
+		const is_1 = requireLib$r();
 		exports.deepCopy = (obj) => {
 		    if (is_1.primitive(obj))
 		        return obj;
@@ -119489,7 +118208,7 @@ function requireLib$1 () {
 	hasRequiredLib$1 = 1;
 	(function (exports) {
 		Object.defineProperty(exports, "__esModule", { value: true });
-		const is_1 = requireLib$s();
+		const is_1 = requireLib$r();
 		const keys = Object.keys;
 		exports.deepEqual = (objA, objB) => {
 		    if (is_1.primitive(objA) || is_1.func(objA))

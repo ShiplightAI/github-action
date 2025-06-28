@@ -7,7 +7,7 @@
 
 | option                     | required | description                |
 | -------------------------- | -------- | -------------------------- |
-| api-token                  | true     | api token for loggia-ai     |
+| api-token                  | true     | api token for loggia-ai    |
 | test-suite-id              | true     | test suite id              |
 | test-suite-environment-url | true     | test suite environment url |
 
