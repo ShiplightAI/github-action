@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import { Client } from './client/index.js'
+import { Github } from './github/github.js'
 
 /**
  * The main function for the action.
@@ -13,28 +14,78 @@ export async function run(): Promise<void> {
     // process.env['INPUT_TEST-SUITE-ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
 
     const apiToken: string = core.getInput('api-token')
-    const testSuiteId: string = core.getInput('test-suite-id')
+    const testSuiteID: string = core.getInput('test-suite-id')
     const testSuiteEnvironmentURL: string = core.getInput(
       'test-suite-environment-url'
     )
+    const githubComment: boolean = core.getInput('github-comment') === 'true'
+    const githubToken: string = core.getInput('github-token')
+    const async: boolean = core.getInput('async') === 'true'
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`apiToken: ${apiToken}`)
-    core.debug(`testSuiteId: ${testSuiteId}`)
+    core.debug(`testSuiteId: ${testSuiteID}`)
     core.debug(`testSuiteEnvironmentURL: ${testSuiteEnvironmentURL}`)
+    core.debug(`githubComment: ${githubComment}`)
+    core.debug(`githubToken: ${githubToken}`)
+    core.debug(`async: ${async}`)
 
     // client
     const client = new Client({
       apiToken,
       trigger: 'GITHUB_ACTION'
     })
-    const { url } = await client.run({ testSuiteId, testSuiteEnvironmentURL })
+    // github
+    const github = new Github({
+      token: githubToken,
+    })
 
-    core.info(`Test run results: ${url}`)
+    // start the test run
+    const { name, url, runID } = await client.start({
+      testSuiteID: testSuiteID,
+      testSuiteEnvironmentURL,
+    })
 
-    core.setOutput('url', url)
+    // if async is true, return
+    if (async) {
+      return ;
+    }
+
+    // comment on the pull request
+    if (githubComment) {
+      await github.comment({
+        testSuiteID: testSuiteID,
+        testSuiteName: name,
+        testSuiteRunID: runID,
+        testSuiteRunResult: 'Pending',
+      })
+    }
+
+    // wait for the test run to finish
+    const { result } = await client.wait({
+      testSuiteRunID: runID,
+    })
+
+    // comment on the pull request
+    if (githubComment) {
+      await github.comment({
+        testSuiteID: testSuiteID,
+        testSuiteName: name,
+        testSuiteRunID: runID,
+        testSuiteRunResult: result,
+      })
+    }
+
+    core.info(`Test suite name: ${name}`)
+    core.info(`Test run result: ${result}`)
+    core.info(`Test run details: ${url}`)
+
+    core.setOutput('success', true)
   } catch (error) {
     // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setOutput('success', false)
+      core.setFailed(error.message)
+    }
   }
 }
