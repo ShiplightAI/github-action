@@ -1,6 +1,6 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: loggia-runner
+description: Use This GitHub Action to run tests on https://app.loggia.ai
+author: Loggia
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
@@ -10,19 +10,30 @@ branding:
 # Define your inputs here.
 inputs:
   api-token:
-    description: 'api token for loggiaai'
+    description: api token for loggiaai
     required: true
   test-suite-id:
-    description: 'test suite id'
+    description: test suite id
     required: true
   test-suite-environment-url:
-    description: 'test suite environment url'
+    description: test suite environment url
     required: true
+  github-comment:
+    description: If enabled, the action will comment on the pull request with the test run results
+    default: 'true'
+  github-token:
+    description: This token used for leaving a comment on the pull request
+    default: ${{ github.token }}
+  async:
+    description: |
+      If enabled, will launch the tests but not wait for them to finish and the action will always output success.
+      Note: GitHub comments will not function if this is set.
+    default: 'false'
 
 # Define your outputs here.
 outputs:
-  url:
-    description: 'url of the test run results'
+  success:
+    description: Whether the test run was successful
 
 runs:
   using: node20
