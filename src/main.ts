@@ -37,18 +37,18 @@ export async function run(): Promise<void> {
     })
     // github
     const github = new Github({
-      token: githubToken,
+      token: githubToken
     })
 
     // start the test run
     const { name, url, runID } = await client.start({
       testSuiteID: testSuiteID,
-      testSuiteEnvironmentURL,
+      testSuiteEnvironmentURL
     })
 
     // if async is true, return
     if (async) {
-      return ;
+      return
     }
 
     // comment on the pull request
@@ -57,13 +57,13 @@ export async function run(): Promise<void> {
         testSuiteID: testSuiteID,
         testSuiteName: name,
         testSuiteRunID: runID,
-        testSuiteRunResult: 'Pending',
+        testSuiteRunResult: 'Pending'
       })
     }
 
     // wait for the test run to finish
     const { result } = await client.wait({
-      testSuiteRunID: runID,
+      testSuiteRunID: runID
     })
 
     // comment on the pull request
@@ -72,7 +72,7 @@ export async function run(): Promise<void> {
         testSuiteID: testSuiteID,
         testSuiteName: name,
         testSuiteRunID: runID,
-        testSuiteRunResult: result,
+        testSuiteRunResult: result
       })
     }
 

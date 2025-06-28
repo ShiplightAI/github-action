@@ -19,7 +19,9 @@ inputs:
     description: test suite environment url
     required: true
   github-comment:
-    description: If enabled, the action will comment on the pull request with the test run results
+    description:
+      If enabled, the action will comment on the pull request with the test run
+      results
     default: 'true'
   github-token:
     description: This token used for leaving a comment on the pull request
