@@ -48,7 +48,10 @@ export class Client implements IClient {
       })
       .json<TestStartResponse>()
 
-    doreamon.logger.debug('[debug] client.start response:', JSON.stringify(response, null, 2))
+    doreamon.logger.debug(
+      '[debug] client.start response:',
+      JSON.stringify(response, null, 2)
+    )
 
     if (response?.success === false) {
       throw new Error(response?.message)
@@ -73,7 +76,7 @@ export class Client implements IClient {
     while (true) {
       if (Date.now() - startTime > MAX_WAIT_TIME) {
         return {
-          result: 'Timeout' as TestRunResult,
+          result: 'Timeout' as TestRunResult
         } as any
       }
 
@@ -86,7 +89,10 @@ export class Client implements IClient {
         })
         .json<TestWaitResponse>()
 
-      doreamon.logger.debug('[debug] client.wait response:', JSON.stringify(response, null, 2))
+      doreamon.logger.debug(
+        '[debug] client.wait response:',
+        JSON.stringify(response, null, 2)
+      )
 
       if (response?.success === false) {
         throw new Error(response?.message)

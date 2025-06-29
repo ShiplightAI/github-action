@@ -14,16 +14,16 @@ export type TestRunStatus = 'Pending' | 'Running' | 'Finished'
 export type TestRunResult = 'Pending' | 'Passed' | 'Failed' | 'Skipped'
 
 export interface TestRun {
-    id: number
-    status: TestRunStatus
-    result: TestRunResult
-    duration: string
-    failedTestCaseCount: number
-    passedTestCaseCount: number
-    totalTestCaseCount: number
-    createdAt: string
-    startTime: string
-    endTime: string
+  id: number
+  status: TestRunStatus
+  result: TestRunResult
+  duration: string
+  failedTestCaseCount: number
+  passedTestCaseCount: number
+  totalTestCaseCount: number
+  createdAt: string
+  startTime: string
+  endTime: string
 }
 
 export type TestStartResponse = {
@@ -55,5 +55,7 @@ export interface IClient {
   start(
     config: StartConfig
   ): Promise<{ name: string; url: string; runID: number }>
-  wait(config: WaitConfig): Promise<{ result?: TestRunResult; updatedAt?: string }>
+  wait(
+    config: WaitConfig
+  ): Promise<{ result?: TestRunResult; updatedAt?: string }>
 }

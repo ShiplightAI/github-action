@@ -59,8 +59,8 @@ export async function run(): Promise<void> {
         testSuiteName: name,
         testSuiteRun: {
           id: runID,
-          status: 'Pending',
-        } as any,
+          status: 'Pending'
+        } as any
       })
     }
 
@@ -74,7 +74,7 @@ export async function run(): Promise<void> {
       await github.comment({
         testSuiteID: testSuiteID,
         testSuiteName: name,
-        testSuiteRun: runResult,
+        testSuiteRun: runResult
       })
     }
 
