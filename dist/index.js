@@ -118946,6 +118946,9 @@ const MAX_WAIT_TIME = 24 * 60 * 60 * 1000; // 24 hours
 // POLL_INTERVAL is the interval to poll the test run status
 const POLL_INTERVAL = 5000; // 5 seconds
 
+if (!!process.env.ACTIONS_STEP_DEBUG) {
+    libExports.doreamon.logger.setLogLevel('debug');
+}
 class Client {
     config;
     constructor(config) {
