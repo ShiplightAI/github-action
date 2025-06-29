@@ -34,7 +34,7 @@ export class Github {
     const testSuiteURL = `https://app.loggia.ai/test-suites/${config.testSuiteID}`
     const testSuiteRunResultURL = `https://app.loggia.ai/run-results/${config.testSuiteRun?.id}`
 
-    const name = `[${config.testSuiteName})(${testSuiteURL})`
+    const name = `[${config.testSuiteName}](${testSuiteURL})`
     const result = `${resultEmoji[config.testSuiteRun?.result]} ${config.testSuiteRun?.result} ([Inspect](${testSuiteRunResultURL}))`
     const startTime = config.testSuiteRun.startTime
       ? new Date(config.testSuiteRun.startTime).toLocaleString('en-US', {
@@ -50,7 +50,7 @@ export class Github {
     const body = `${commentIdentifier}
 # [Loggia](https://app.loggia.ai) Runner
 
-| Name | Result | Start Time | End Time |
+| Name | Result | Start Time (UTC) | End Time (UTC) |
 | :--- | :----- | :------ | :------ |
 | ${name} | ${result} | ${startTime} | ${endTime} |
 
