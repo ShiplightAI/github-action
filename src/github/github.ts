@@ -33,12 +33,12 @@ export class Github {
 
     const name = `[${config.testSuiteName}](${testSuiteURL})`
     const result = `${resultEmoji[config.testSuiteRun?.result]} ${config.testSuiteRun?.result} ([Inspect](${testSuiteRunResultURL}))`
-    const startTime = config.testSuiteRun.startTime
+    const startTime = config.testSuiteRun?.startTime
       ? new Date(config.testSuiteRun.startTime).toLocaleString('en-US', {
           timeZone: 'UTC'
         })
       : '-'
-    const endTime = config.testSuiteRun.endTime
+    const endTime = config.testSuiteRun?.endTime
       ? new Date(config.testSuiteRun.endTime).toLocaleString('en-US', {
           timeZone: 'UTC'
         })

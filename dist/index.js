@@ -118979,7 +118979,7 @@ class Client {
             }
         })
             .json();
-        core$2.debug('[debug] client.start response: ' + JSON.stringify(response, null, 2));
+        core$2.debug('[client.start] response: ' + JSON.stringify(response, null, 2));
         if (response?.success === false) {
             throw new Error(response?.message);
         }
@@ -119010,7 +119010,7 @@ class Client {
                 }
             })
                 .json();
-            core$2.debug('[debug] client.wait response: ' + JSON.stringify(response, null, 2));
+            core$2.debug('[client.wait] response: ' + JSON.stringify(response, null, 2));
             if (response?.success === false) {
                 throw new Error(response?.message);
             }
@@ -122984,10 +122984,8 @@ const resultEmoji = {
     Skipped: '⏭️'
 };
 class Github {
-    config;
     core;
     constructor(config) {
-        this.config = config;
         this.core = githubExports.getOctokit(config.token);
     }
     async comment(config) {
@@ -122996,12 +122994,12 @@ class Github {
         const testSuiteRunResultURL = `https://app.loggia.ai/run-results/${config.testSuiteRun?.id}`;
         const name = `[${config.testSuiteName}](${testSuiteURL})`;
         const result = `${resultEmoji[config.testSuiteRun?.result]} ${config.testSuiteRun?.result} ([Inspect](${testSuiteRunResultURL}))`;
-        const startTime = config.testSuiteRun.startTime
+        const startTime = config.testSuiteRun?.startTime
             ? new Date(config.testSuiteRun.startTime).toLocaleString('en-US', {
                 timeZone: 'UTC'
             })
             : '-';
-        const endTime = config.testSuiteRun.endTime
+        const endTime = config.testSuiteRun?.endTime
             ? new Date(config.testSuiteRun.endTime).toLocaleString('en-US', {
                 timeZone: 'UTC'
             })
@@ -123079,7 +123077,7 @@ async function run() {
         });
         // S2. start the test run
         const { name, url, runID } = await client.start({
-            testSuiteID: testSuiteID,
+            testSuiteID,
             testSuiteEnvironmentURL
         });
         // S2.1 if async is true, return

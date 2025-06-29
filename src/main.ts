@@ -43,7 +43,7 @@ export async function run(): Promise<void> {
 
     // S2. start the test run
     const { name, url, runID } = await client.start({
-      testSuiteID: testSuiteID,
+      testSuiteID,
       testSuiteEnvironmentURL
     })
 

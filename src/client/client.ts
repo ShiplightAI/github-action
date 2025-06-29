@@ -49,9 +49,7 @@ export class Client implements IClient {
       })
       .json<TestStartResponse>()
 
-    core.debug(
-      '[debug] client.start response: ' + JSON.stringify(response, null, 2)
-    )
+    core.debug('[client.start] response: ' + JSON.stringify(response, null, 2))
 
     if (response?.success === false) {
       throw new Error(response?.message)
@@ -89,9 +87,7 @@ export class Client implements IClient {
         })
         .json<TestWaitResponse>()
 
-      core.debug(
-        '[debug] client.wait response: ' + JSON.stringify(response, null, 2)
-      )
+      core.debug('[client.wait] response: ' + JSON.stringify(response, null, 2))
 
       if (response?.success === false) {
         throw new Error(response?.message)
