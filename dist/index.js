@@ -60,7 +60,7 @@ function getAugmentedNamespace(n) {
 	return a;
 }
 
-var core$2 = {};
+var core$3 = {};
 
 var command = {};
 
@@ -26924,10 +26924,10 @@ function requirePlatform () {
 var hasRequiredCore$2;
 
 function requireCore$2 () {
-	if (hasRequiredCore$2) return core$2;
+	if (hasRequiredCore$2) return core$3;
 	hasRequiredCore$2 = 1;
 	(function (exports) {
-		var __createBinding = (core$2 && core$2.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+		var __createBinding = (core$3 && core$3.__createBinding) || (Object.create ? (function(o, m, k, k2) {
 		    if (k2 === undefined) k2 = k;
 		    var desc = Object.getOwnPropertyDescriptor(m, k);
 		    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -26938,19 +26938,19 @@ function requireCore$2 () {
 		    if (k2 === undefined) k2 = k;
 		    o[k2] = m[k];
 		}));
-		var __setModuleDefault = (core$2 && core$2.__setModuleDefault) || (Object.create ? (function(o, v) {
+		var __setModuleDefault = (core$3 && core$3.__setModuleDefault) || (Object.create ? (function(o, v) {
 		    Object.defineProperty(o, "default", { enumerable: true, value: v });
 		}) : function(o, v) {
 		    o["default"] = v;
 		});
-		var __importStar = (core$2 && core$2.__importStar) || function (mod) {
+		var __importStar = (core$3 && core$3.__importStar) || function (mod) {
 		    if (mod && mod.__esModule) return mod;
 		    var result = {};
 		    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
 		    __setModuleDefault(result, mod);
 		    return result;
 		};
-		var __awaiter = (core$2 && core$2.__awaiter) || function (thisArg, _arguments, P, generator) {
+		var __awaiter = (core$3 && core$3.__awaiter) || function (thisArg, _arguments, P, generator) {
 		    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
 		    return new (P || (P = Promise))(function (resolve, reject) {
 		        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -27270,11 +27270,12 @@ function requireCore$2 () {
 		 */
 		exports.platform = __importStar(requirePlatform());
 		
-	} (core$2));
-	return core$2;
+	} (core$3));
+	return core$3;
 }
 
 var coreExports = requireCore$2();
+var core$2 = /*@__PURE__*/getDefaultExportFromCjs(coreExports);
 
 var lib$s = {};
 
@@ -118946,9 +118947,6 @@ const MAX_WAIT_TIME = 24 * 60 * 60 * 1000; // 24 hours
 // POLL_INTERVAL is the interval to poll the test run status
 const POLL_INTERVAL = 5000; // 5 seconds
 
-if (!!process.env.ACTIONS_STEP_DEBUG) {
-    libExports.doreamon.logger.setLogLevel('debug');
-}
 class Client {
     config;
     constructor(config) {
@@ -118981,7 +118979,7 @@ class Client {
             }
         })
             .json();
-        libExports.doreamon.logger.debug('[debug] client.start response:', JSON.stringify(response, null, 2));
+        core$2.debug('[debug] client.start response: ' + JSON.stringify(response, null, 2));
         if (response?.success === false) {
             throw new Error(response?.message);
         }
@@ -119012,7 +119010,7 @@ class Client {
                 }
             })
                 .json();
-            libExports.doreamon.logger.debug('[debug] client.wait response:', JSON.stringify(response, null, 2));
+            core$2.debug('[debug] client.wait response: ' + JSON.stringify(response, null, 2));
             if (response?.success === false) {
                 throw new Error(response?.message);
             }

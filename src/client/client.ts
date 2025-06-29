@@ -1,3 +1,4 @@
+import core from '@actions/core'
 import { doreamon } from '@zodash/doreamon'
 import { APP_URL, API_URL, MAX_WAIT_TIME, POLL_INTERVAL } from './constants.js'
 import {
@@ -9,10 +10,6 @@ import {
   TestWaitResponse,
   WaitConfig
 } from './entity.js'
-
-if (!!process.env.ACTIONS_STEP_DEBUG) {
-  doreamon.logger.setLogLevel('debug')
-}
 
 export class Client implements IClient {
   private config: Config
@@ -52,9 +49,8 @@ export class Client implements IClient {
       })
       .json<TestStartResponse>()
 
-    doreamon.logger.debug(
-      '[debug] client.start response:',
-      JSON.stringify(response, null, 2)
+    core.debug(
+      '[debug] client.start response: ' + JSON.stringify(response, null, 2)
     )
 
     if (response?.success === false) {
@@ -93,9 +89,8 @@ export class Client implements IClient {
         })
         .json<TestWaitResponse>()
 
-      doreamon.logger.debug(
-        '[debug] client.wait response:',
-        JSON.stringify(response, null, 2)
+      core.debug(
+        '[debug] client.wait response: ' + JSON.stringify(response, null, 2)
       )
 
       if (response?.success === false) {
