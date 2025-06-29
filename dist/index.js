@@ -123093,7 +123093,7 @@ async function run() {
                 testSuiteName: name,
                 testSuiteRun: {
                     id: runID,
-                    status: 'Pending'
+                    result: 'Pending'
                 }
             });
         }

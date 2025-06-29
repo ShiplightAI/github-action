@@ -59,7 +59,7 @@ export async function run(): Promise<void> {
         testSuiteName: name,
         testSuiteRun: {
           id: runID,
-          status: 'Pending'
+          result: 'Pending'
         } as any
       })
     }
