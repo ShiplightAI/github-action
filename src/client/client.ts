@@ -10,6 +10,10 @@ import {
   WaitConfig
 } from './entity.js'
 
+if (!!process.env.ACTIONS_STEP_DEBUG) {
+  doreamon.logger.setLogLevel('debug')
+}
+
 export class Client implements IClient {
   private config: Config
 
