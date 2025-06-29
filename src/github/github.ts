@@ -19,12 +19,9 @@ export interface CommentConfig {
 }
 
 export class Github {
-  private config: Config
   private core: ReturnType<typeof getOctokit>
 
   constructor(config: Config) {
-    this.config = config
-
     this.core = getOctokit(config.token)
   }
 
