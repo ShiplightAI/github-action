@@ -13,6 +13,7 @@ export async function run(): Promise<void> {
     // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
     // process.env['INPUT_TEST-SUITE-ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
 
+    // S1. prepare
     const apiToken: string = core.getInput('api-token')
     const testSuiteID: string = core.getInput('test-suite-id')
     const testSuiteEnvironmentURL: string = core.getInput(
@@ -40,44 +41,45 @@ export async function run(): Promise<void> {
       token: githubToken
     })
 
-    // start the test run
+    // S2. start the test run
     const { name, url, runID } = await client.start({
       testSuiteID: testSuiteID,
       testSuiteEnvironmentURL
     })
 
-    // if async is true, return
+    // S2.1 if async is true, return
     if (async) {
       return
     }
 
-    // comment on the pull request
+    // S3. comment on the pull request
     if (githubComment) {
       await github.comment({
         testSuiteID: testSuiteID,
         testSuiteName: name,
-        testSuiteRunID: runID,
-        testSuiteRunResult: 'Pending'
+        testSuiteRun: {
+          id: runID,
+          status: 'Pending',
+        } as any,
       })
     }
 
-    // wait for the test run to finish
-    const { result } = await client.wait({
+    // S3.1 wait for the test run to finish
+    const runResult = await client.wait({
       testSuiteRunID: runID
     })
 
-    // comment on the pull request
+    // S3.2 comment on the pull request
     if (githubComment) {
       await github.comment({
         testSuiteID: testSuiteID,
         testSuiteName: name,
-        testSuiteRunID: runID,
-        testSuiteRunResult: result
+        testSuiteRun: runResult,
       })
     }
 
     core.info(`Test suite name: ${name}`)
-    core.info(`Test run result: ${result}`)
+    core.info(`Test run result: ${runResult.result}`)
     core.info(`Test run details: ${url}`)
 
     core.setOutput('success', true)

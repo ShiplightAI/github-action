@@ -47,7 +47,8 @@ export class Client implements IClient {
         }
       })
       .json<TestStartResponse>()
-    console.log('[debug][response]:', JSON.stringify(response, null, 2))
+
+    doreamon.logger.debug('[debug] client.start response:', JSON.stringify(response, null, 2))
 
     if (response?.success === false) {
       throw new Error(response?.message)
@@ -66,14 +67,14 @@ export class Client implements IClient {
       throw new Error('Test run ID is required')
     }
 
-    const url = `${API_URL}/v1/test-run/test-suite/${testRunId}`
+    const url = `${API_URL}/run-results/${testRunId}`
     const startTime = Date.now()
 
     while (true) {
       if (Date.now() - startTime > MAX_WAIT_TIME) {
         return {
-          result: 'Timeout' as TestRunResult
-        }
+          result: 'Timeout' as TestRunResult,
+        } as any
       }
 
       const response = await doreamon.request
@@ -85,14 +86,14 @@ export class Client implements IClient {
         })
         .json<TestWaitResponse>()
 
+      doreamon.logger.debug('[debug] client.wait response:', JSON.stringify(response, null, 2))
+
       if (response?.success === false) {
         throw new Error(response?.message)
       }
 
       if (response?.testRun?.status === 'Finished') {
-        return {
-          result: response?.testRun?.result
-        }
+        return response?.testRun
       }
 
       await doreamon.delay(POLL_INTERVAL)
