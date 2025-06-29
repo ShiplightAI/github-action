@@ -1,5 +1,5 @@
 import { context, getOctokit } from '@actions/github'
-import { TestRun, TestRunResult } from '../client/entity.js'
+import { TestRun } from '../client/entity.js'
 
 const resultEmoji = {
   Pending: '🔄',

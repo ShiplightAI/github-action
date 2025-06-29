@@ -59,7 +59,7 @@ export class Client implements IClient {
 
     return {
       name: response?.target!,
-      url: `${APP_URL}/run-results/${response?.id}`,
+      url: `${APP_URL}/run-results/${response?.id!}`,
       runID: response?.id!
     }
   }

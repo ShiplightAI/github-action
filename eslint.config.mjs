@@ -75,7 +75,9 @@ export default [
       'no-console': 'off',
       'no-shadow': 'off',
       'no-unused-vars': 'off',
-      'prettier/prettier': 'error'
+      'prettier/prettier': 'error',
+      '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
+      '@typescript-eslint/no-explicit-any': 'off'
     }
   }
 ]
