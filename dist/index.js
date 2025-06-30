@@ -118964,6 +118964,18 @@ class Client {
             throw new Error('Test suite environment URL is required');
         }
         const url = `${API_URL}/v1/test-run/test-suite/${testSuiteId}`;
+        core$2.debug('[client.start] request: ' +
+            JSON.stringify({
+                method: 'POST',
+                url,
+                body: {
+                    environment: {
+                        url: testSuiteEnvironmentURL
+                    },
+                    testContext: {},
+                    trigger: this.config.trigger
+                }
+            }, null, 2));
         const response = await libExports.doreamon.request
             .post(url, {
             headers: {
@@ -119002,6 +119014,15 @@ class Client {
                     result: 'Timeout'
                 };
             }
+            core$2.debug('[client.wait] request: ' +
+                JSON.stringify({
+                    method: 'GET',
+                    url,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${this.config.apiToken}`
+                    }
+                }, null, 2));
             const response = await libExports.doreamon.request
                 .get(url, {
                 headers: {

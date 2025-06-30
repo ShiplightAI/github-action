@@ -33,6 +33,25 @@ export class Client implements IClient {
 
     const url = `${API_URL}/v1/test-run/test-suite/${testSuiteId}`
 
+    core.debug(
+      '[client.start] request: ' +
+        JSON.stringify(
+          {
+            method: 'POST',
+            url,
+            body: {
+              environment: {
+                url: testSuiteEnvironmentURL
+              },
+              testContext: {},
+              trigger: this.config.trigger
+            }
+          },
+          null,
+          2
+        )
+    )
+
     const response = await doreamon.request
       .post(url, {
         headers: {
@@ -77,6 +96,22 @@ export class Client implements IClient {
           result: 'Timeout' as TestRunResult
         } as any
       }
+
+      core.debug(
+        '[client.wait] request: ' +
+          JSON.stringify(
+            {
+              method: 'GET',
+              url,
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${this.config.apiToken}`
+              }
+            },
+            null,
+            2
+          )
+      )
 
       const response = await doreamon.request
         .get(url, {
