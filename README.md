@@ -33,8 +33,8 @@ jobs:
         uses: loggia-AI/github-action@v1
         with:
           api-token: ${{ secrets.SHIPLIGHT_API_TOKEN }}
-          test-suite-id: ${{ secrets.SHIPLIGHT_TEST_SUITE_ID }}
-          test-suite-environment-url: ${{ secrets.SHIPLIGHT_TEST_SUITE_ENVIRONMENT_URL }}
+          test-suite-id: YOUR_SHIPLIGHT_TEST_SUITE_ID
+          test-suite-environment-url: YOUR_SHIPLIGHT_TEST_SUITE_ENVIRONMENT_URL
 ```
 
 ### License
