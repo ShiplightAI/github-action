@@ -68,7 +68,10 @@ export class Client implements IClient {
       })
       .json<TestStartResponse>()
 
-    core.debug('[client.start] response: ' + JSON.stringify(response, null, 2))
+    core.debug(
+      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][client.start] response: ` +
+        JSON.stringify(response, null, 2)
+    )
 
     if (response?.success === false) {
       throw new Error(response?.message)
@@ -98,7 +101,7 @@ export class Client implements IClient {
       }
 
       core.debug(
-        '[client.wait] request: ' +
+        `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][client.wait] request: ` +
           JSON.stringify(
             {
               method: 'GET',
@@ -122,7 +125,10 @@ export class Client implements IClient {
         })
         .json<TestWaitResponse>()
 
-      core.debug('[client.wait] response: ' + JSON.stringify(response, null, 2))
+      core.debug(
+        `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][client.wait] response: ` +
+          JSON.stringify(response, null, 2)
+      )
 
       if (response?.success === false) {
         throw new Error(response?.message)

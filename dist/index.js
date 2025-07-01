@@ -118991,7 +118991,8 @@ class Client {
             }
         })
             .json();
-        core$2.debug('[client.start] response: ' + JSON.stringify(response, null, 2));
+        core$2.debug(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][client.start] response: ` +
+            JSON.stringify(response, null, 2));
         if (response?.success === false) {
             throw new Error(response?.message);
         }
@@ -119014,7 +119015,7 @@ class Client {
                     result: 'Timeout'
                 };
             }
-            core$2.debug('[client.wait] request: ' +
+            core$2.debug(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][client.wait] request: ` +
                 JSON.stringify({
                     method: 'GET',
                     url,
@@ -119031,7 +119032,8 @@ class Client {
                 }
             })
                 .json();
-            core$2.debug('[client.wait] response: ' + JSON.stringify(response, null, 2));
+            core$2.debug(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][client.wait] response: ` +
+                JSON.stringify(response, null, 2));
             if (response?.success === false) {
                 throw new Error(response?.message);
             }
@@ -123078,7 +123080,7 @@ async function run() {
         // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
         // process.env['INPUT_TEST-SUITE-ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
         // S1. prepare
-        coreExports.info('[shiplight] prepare ...');
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] prepare ...`);
         const apiToken = coreExports.getInput('api-token');
         const testSuiteID = coreExports.getInput('test-suite-id');
         const testSuiteEnvironmentURL = coreExports.getInput('test-suite-environment-url');
@@ -123102,18 +123104,18 @@ async function run() {
             token: githubToken
         });
         // S2. start the test run
-        coreExports.info('[shiplight] start the test run ...');
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] start the test run ...`);
         const { name, url, runID } = await client.start({
             testSuiteID,
             testSuiteEnvironmentURL
         });
         // S2.1 if async is true, return
         if (async) {
-            coreExports.info('[shiplight] async mode is enabled, ignore wait for the test run to finish and no comment on the pull request');
+            coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] async mode is enabled, ignore wait for the test run to finish and no comment on the pull request`);
             return;
         }
         // S3. comment on the pull request
-        coreExports.info('[shiplight] comment start on the pull request ...');
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment start on the pull request ...`);
         if (githubComment) {
             await github.comment({
                 testSuiteID: testSuiteID,
@@ -123125,12 +123127,12 @@ async function run() {
             });
         }
         // S3.1 wait for the test run to finish
-        coreExports.info('[shiplight] wait for the test run to finish ...');
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] wait for the test run to finish ...`);
         const runResult = await client.wait({
             testSuiteRunID: runID
         });
         // S3.2 comment on the pull request
-        coreExports.info('[shiplight] comment finishedon the pull request ...');
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment finishedon the pull request ...`);
         if (githubComment) {
             await github.comment({
                 testSuiteID: testSuiteID,
@@ -123138,9 +123140,9 @@ async function run() {
                 testSuiteRun: runResult
             });
         }
-        coreExports.info(`Test suite name: ${name}`);
-        coreExports.info(`Test run result: ${runResult.result}`);
-        coreExports.info(`Test run details: ${url}`);
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test suite name: ${name}`);
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run result: ${runResult.result}`);
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run details: ${url}`);
         coreExports.setOutput('success', true);
     }
     catch (error) {

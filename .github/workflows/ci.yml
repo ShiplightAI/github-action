@@ -9,8 +9,7 @@ on:
       - main
       - master
 
-permissions:
-  contents: read
+permissions: write-all
 
 jobs:
   test-typescript:
