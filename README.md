@@ -1,7 +1,7 @@
 # GitHub Action to Loggia
 
 ![https://github.com/loggia-AI/github-action](https://img.shields.io/github/v/release/loggia-AI/github-action)
-![https://github.com/loggia-AI/github-action](https://github.com/loggia-AI/github-action/workflows//Publish/badge.svg)
+![https://github.com/loggia-AI/github-action](https://github.com/loggia-AI/github-action/workflows/Continuous%20Integration/badge.svg)
 
 ## Usage
 
