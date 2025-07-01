@@ -25,11 +25,11 @@ on:
 permissions: write-all
 
 jobs:
-  build:
+  test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Run test in Loggia
+      - name: Shiplight Test
         uses: loggia-AI/github-action@v1
         with:
           api-token: ${{ secrets.LOGGIA_API_TOKEN }}
