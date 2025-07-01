@@ -3,13 +3,24 @@
 ![https://github.com/loggia-AI/github-action](https://img.shields.io/github/v/release/loggia-AI/github-action)
 ![https://github.com/loggia-AI/github-action](https://github.com/loggia-AI/github-action/workflows//Publish/badge.svg)
 
-### Usage
+## Usage
 
-| option                     | required | description                |
-| -------------------------- | -------- | -------------------------- |
-| api-token                  | true     | api token for loggia-ai    |
-| test-suite-id              | true     | test suite id              |
-| test-suite-environment-url | true     | test suite environment url |
+### Inputs
+
+| option                     | required | default | description                |
+| -------------------------- | -------- | ------- | -------------------------- |
+| api-token                  | true     |         | API token for Loggia AI    |
+| test-suite-id              | true     |         | Test suite ID              |
+| test-suite-environment-url | true     |         | Test suite environment URL |
+| github-comment             | false    | `true`  | If enabled, the action will comment on the pull request with the test run results |
+| github-token               | false    | `${{ github.token }}` | Token used for leaving a comment on the pull request |
+| async                      | false    | `false` | If enabled, will launch the tests but not wait for them to finish and the action will always output success. Note: GitHub comments will not function if this is set. |
+
+### Outputs
+
+| output  | description                        |
+| ------- | ---------------------------------- |
+| success | Whether the test run was successful |
 
 ### Example
 
