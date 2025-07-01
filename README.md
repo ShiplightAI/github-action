@@ -14,9 +14,15 @@
 ### Example
 
 ```yml
-name: CI
+name: Shiplight Test
 
-on: [push]
+on:
+  pull_request:
+    branches:
+      - main
+
+# should set permissions to write-all for private repo
+permissions: write-all
 
 jobs:
   build:
@@ -28,8 +34,7 @@ jobs:
         with:
           api-token: ${{ secrets.LOGGIA_API_TOKEN }}
           test-suite-id: ${{ secrets.LOGGIA_TEST_SUITE_ID }}
-          test-suite-environment-url:
-            ${{ secrets.LOGGIA_TEST_SUITE_ENVIRONMENT_URL }}
+          test-suite-environment-url: ${{ secrets.LOGGIA_TEST_SUITE_ENVIRONMENT_URL }}
 ```
 
 ### License
