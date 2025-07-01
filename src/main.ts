@@ -14,7 +14,7 @@ export async function run(): Promise<void> {
     // process.env['INPUT_TEST-SUITE-ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
 
     // S1. prepare
-    core.info('[loggia] prepare ...')
+    core.info('[shiplight] prepare ...')
     const apiToken: string = core.getInput('api-token')
     const testSuiteID: string = core.getInput('test-suite-id')
     const testSuiteEnvironmentURL: string = core.getInput(
@@ -43,7 +43,7 @@ export async function run(): Promise<void> {
     })
 
     // S2. start the test run
-    core.info('[loggia] start the test run ...')
+    core.info('[shiplight] start the test run ...')
     const { name, url, runID } = await client.start({
       testSuiteID,
       testSuiteEnvironmentURL
@@ -52,13 +52,13 @@ export async function run(): Promise<void> {
     // S2.1 if async is true, return
     if (async) {
       core.info(
-        '[loggia] async mode is enabled, ignore wait for the test run to finish and no comment on the pull request'
+        '[shiplight] async mode is enabled, ignore wait for the test run to finish and no comment on the pull request'
       )
       return
     }
 
     // S3. comment on the pull request
-    core.info('[loggia] comment start on the pull request ...')
+    core.info('[shiplight] comment start on the pull request ...')
     if (githubComment) {
       await github.comment({
         testSuiteID: testSuiteID,
@@ -71,13 +71,13 @@ export async function run(): Promise<void> {
     }
 
     // S3.1 wait for the test run to finish
-    core.info('[loggia] wait for the test run to finish ...')
+    core.info('[shiplight] wait for the test run to finish ...')
     const runResult = await client.wait({
       testSuiteRunID: runID
     })
 
     // S3.2 comment on the pull request
-    core.info('[loggia] comment finishedon the pull request ...')
+    core.info('[shiplight] comment finishedon the pull request ...')
     if (githubComment) {
       await github.comment({
         testSuiteID: testSuiteID,

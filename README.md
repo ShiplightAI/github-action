@@ -1,4 +1,4 @@
-# GitHub Action to Loggia
+# GitHub Action to Shiplight
 
 ![https://github.com/loggia-AI/github-action](https://img.shields.io/github/v/release/loggia-AI/github-action)
 ![https://github.com/loggia-AI/github-action](https://github.com/loggia-AI/github-action/workflows/Continuous%20Integration/badge.svg)
@@ -9,7 +9,7 @@
 
 | option                     | required | default        | description                                                                                                                                                          |
 | -------------------------- | -------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| api-token                  | true     |                | API token for Loggia AI                                                                                                                                              |
+| api-token                  | true     |                | API token for Shiplight AI                                                                                                                                           |
 | test-suite-id              | true     |                | Test suite ID                                                                                                                                                        |
 | test-suite-environment-url | true     |                | Test suite environment URL                                                                                                                                           |
 | github-comment             | false    | `true`         | If enabled, the action will comment on the pull request with the test run results                                                                                    |

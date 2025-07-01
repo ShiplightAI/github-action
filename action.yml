@@ -1,6 +1,6 @@
-name: loggia-runner
-description: Use This GitHub Action to run tests on https://app.loggia.ai
-author: Loggia
+name: shiplight-runner
+description: Use This GitHub Action to run tests on https://app.shiplight.ai
+author: Shiplight
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
@@ -10,7 +10,7 @@ branding:
 # Define your inputs here.
 inputs:
   api-token:
-    description: api token for loggiaai
+    description: api token for shiplight
     required: true
   test-suite-id:
     description: test suite id
