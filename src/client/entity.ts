@@ -44,7 +44,8 @@ export type TestWaitResponse = {
 
 export interface StartConfig {
   testSuiteID: string
-  testSuiteEnvironmentURL: string
+  environmentID: string
+  environmentURL?: string
 }
 
 export interface WaitConfig {

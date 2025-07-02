@@ -12,7 +12,7 @@ export async function run(): Promise<void> {
   try {
     // process.env['INPUT_API-TOKEN'] = process.env.API_TOKEN || ''
     // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
-    // process.env['INPUT_TEST-SUITE-ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
+    // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
 
     // S1. prepare
     core.info(
@@ -20,8 +20,9 @@ export async function run(): Promise<void> {
     )
     const apiToken: string = core.getInput('api-token')
     const testSuiteID: string = core.getInput('test-suite-id')
-    const testSuiteEnvironmentURL: string = core.getInput(
-      'test-suite-environment-url'
+    const environmentID: string = core.getInput('environment-id')
+    const environmentURL: string = core.getInput(
+      'environment-url'
     )
     const githubComment: boolean = core.getInput('github-comment') === 'true'
     const githubToken: string = core.getInput('github-token')
@@ -30,7 +31,8 @@ export async function run(): Promise<void> {
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`apiToken: ${apiToken}`)
     core.debug(`testSuiteId: ${testSuiteID}`)
-    core.debug(`testSuiteEnvironmentURL: ${testSuiteEnvironmentURL}`)
+    core.debug(`environmentID: ${environmentID}`)
+    core.debug(`testSuiteEnvironmentURL: ${environmentURL}`)
     core.debug(`githubComment: ${githubComment}`)
     core.debug(`githubToken: ${githubToken}`)
     core.debug(`async: ${async}`)
@@ -51,7 +53,8 @@ export async function run(): Promise<void> {
     )
     const { name, url, runID } = await client.start({
       testSuiteID,
-      testSuiteEnvironmentURL
+      environmentID,
+      environmentURL,
     })
 
     // S2.1 if async is true, return
