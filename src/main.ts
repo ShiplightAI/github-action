@@ -12,7 +12,7 @@ export async function run(): Promise<void> {
   try {
     // process.env['INPUT_API-TOKEN'] = process.env.API_TOKEN || ''
     // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
-    // process.env['INPUT_TEST-SUITE-ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
+    // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
 
     // S1. prepare
     core.info(
@@ -21,7 +21,7 @@ export async function run(): Promise<void> {
     const apiToken: string = core.getInput('api-token')
     const testSuiteID: string = core.getInput('test-suite-id')
     const testSuiteEnvironmentURL: string = core.getInput(
-      'test-suite-environment-url'
+      'environment-url'
     )
     const githubComment: boolean = core.getInput('github-comment') === 'true'
     const githubToken: string = core.getInput('github-token')

@@ -59,7 +59,7 @@ jobs:
         with:
           api-token: ${{ secrets.LOGGIA_API_TOKEN }}
           test-suite-id: ${{ secrets.LOGGIA_TEST_SUITE_ID }}
-          test-suite-environment-url:
+          environment-url:
             ${{ secrets.LOGGIA_TEST_SUITE_ENVIRONMENT_URL }}
 
       - name: Print Output
