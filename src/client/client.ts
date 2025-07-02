@@ -25,7 +25,7 @@ export class Client implements IClient {
   async start(config: StartConfig) {
     const { testSuiteID: testSuiteId, environmentID, environmentURL } = config
     if (!testSuiteId) {
-      throw new Error('Test suite ID is required')
+      throw new Error('Test suite id is required')
     }
     if (!environmentID) {
       throw new Error('Test suite environment id is required')
