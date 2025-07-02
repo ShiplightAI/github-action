@@ -118960,9 +118960,9 @@ class Client {
         if (!testSuiteId) {
             throw new Error('Test suite id is required');
         }
-        if (!environmentID) {
-            throw new Error('Test suite environment id is required');
-        }
+        // if (!environmentID) {
+        //   throw new Error('Test suite environment id is required')
+        // }
         const url = `${API_URL}/v1/test-run/test-suite/${testSuiteId}`;
         core$2.debug('[client.start] request: ' +
             JSON.stringify({
