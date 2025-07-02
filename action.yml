@@ -15,9 +15,12 @@ inputs:
   test-suite-id:
     description: test suite id
     required: true
-  environment-url:
-    description: test suite environment url
+  environment-id:
+    description: environment id
     required: true
+  environment-url:
+    description: environment url
+    required: false
   github-comment:
     description:
       If enabled, the action will comment on the pull request with the test run

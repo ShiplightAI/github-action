@@ -23,12 +23,12 @@ export class Client implements IClient {
   }
 
   async start(config: StartConfig) {
-    const { testSuiteID: testSuiteId, testSuiteEnvironmentURL } = config
+    const { testSuiteID: testSuiteId, environmentID, environmentURL } = config
     if (!testSuiteId) {
       throw new Error('Test suite ID is required')
     }
-    if (!testSuiteEnvironmentURL) {
-      throw new Error('Test suite environment URL is required')
+    if (!environmentID) {
+      throw new Error('Test suite environment id is required')
     }
 
     const url = `${API_URL}/v1/test-run/test-suite/${testSuiteId}`
@@ -41,7 +41,8 @@ export class Client implements IClient {
             url,
             body: {
               environment: {
-                url: testSuiteEnvironmentURL
+                id: environmentID,
+                url: environmentURL
               },
               testContext: {},
               trigger: this.config.trigger
@@ -60,7 +61,8 @@ export class Client implements IClient {
         },
         body: {
           environment: {
-            url: testSuiteEnvironmentURL
+            id: environmentID,
+            url: environmentURL
           },
           testContext: {},
           trigger: this.config.trigger

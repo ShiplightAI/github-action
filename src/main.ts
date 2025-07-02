@@ -20,7 +20,8 @@ export async function run(): Promise<void> {
     )
     const apiToken: string = core.getInput('api-token')
     const testSuiteID: string = core.getInput('test-suite-id')
-    const testSuiteEnvironmentURL: string = core.getInput(
+    const environmentID: string = core.getInput('environment-id')
+    const environmentURL: string = core.getInput(
       'environment-url'
     )
     const githubComment: boolean = core.getInput('github-comment') === 'true'
@@ -30,7 +31,8 @@ export async function run(): Promise<void> {
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`apiToken: ${apiToken}`)
     core.debug(`testSuiteId: ${testSuiteID}`)
-    core.debug(`testSuiteEnvironmentURL: ${testSuiteEnvironmentURL}`)
+    core.debug(`environmentID: ${environmentID}`)
+    core.debug(`testSuiteEnvironmentURL: ${environmentURL}`)
     core.debug(`githubComment: ${githubComment}`)
     core.debug(`githubToken: ${githubToken}`)
     core.debug(`async: ${async}`)
@@ -51,7 +53,8 @@ export async function run(): Promise<void> {
     )
     const { name, url, runID } = await client.start({
       testSuiteID,
-      testSuiteEnvironmentURL
+      environmentID,
+      environmentURL,
     })
 
     // S2.1 if async is true, return
