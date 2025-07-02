@@ -118956,12 +118956,12 @@ class Client {
         }
     }
     async start(config) {
-        const { testSuiteID: testSuiteId, testSuiteEnvironmentURL } = config;
+        const { testSuiteID: testSuiteId, environmentID, environmentURL } = config;
         if (!testSuiteId) {
-            throw new Error('Test suite ID is required');
+            throw new Error('Test suite id is required');
         }
-        if (!testSuiteEnvironmentURL) {
-            throw new Error('Test suite environment URL is required');
+        if (!environmentID) {
+            throw new Error('Test suite environment id is required');
         }
         const url = `${API_URL}/v1/test-run/test-suite/${testSuiteId}`;
         core$2.debug('[client.start] request: ' +
@@ -118970,7 +118970,8 @@ class Client {
                 url,
                 body: {
                     environment: {
-                        url: testSuiteEnvironmentURL
+                        id: environmentID,
+                        url: environmentURL
                     },
                     testContext: {},
                     trigger: this.config.trigger
@@ -118984,7 +118985,8 @@ class Client {
             },
             body: {
                 environment: {
-                    url: testSuiteEnvironmentURL
+                    id: environmentID,
+                    url: environmentURL
                 },
                 testContext: {},
                 trigger: this.config.trigger
@@ -123078,19 +123080,21 @@ async function run() {
     try {
         // process.env['INPUT_API-TOKEN'] = process.env.API_TOKEN || ''
         // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
-        // process.env['INPUT_TEST-SUITE-ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
+        // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
         // S1. prepare
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] prepare ...`);
         const apiToken = coreExports.getInput('api-token');
         const testSuiteID = coreExports.getInput('test-suite-id');
-        const testSuiteEnvironmentURL = coreExports.getInput('test-suite-environment-url');
+        const environmentID = coreExports.getInput('environment-id');
+        const environmentURL = coreExports.getInput('environment-url');
         const githubComment = coreExports.getInput('github-comment') === 'true';
         const githubToken = coreExports.getInput('github-token');
         const async = coreExports.getInput('async') === 'true';
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         coreExports.debug(`apiToken: ${apiToken}`);
         coreExports.debug(`testSuiteId: ${testSuiteID}`);
-        coreExports.debug(`testSuiteEnvironmentURL: ${testSuiteEnvironmentURL}`);
+        coreExports.debug(`environmentID: ${environmentID}`);
+        coreExports.debug(`testSuiteEnvironmentURL: ${environmentURL}`);
         coreExports.debug(`githubComment: ${githubComment}`);
         coreExports.debug(`githubToken: ${githubToken}`);
         coreExports.debug(`async: ${async}`);
@@ -123107,7 +123111,8 @@ async function run() {
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] start the test run ...`);
         const { name, url, runID } = await client.start({
             testSuiteID,
-            testSuiteEnvironmentURL
+            environmentID,
+            environmentURL
         });
         // S2.1 if async is true, return
         if (async) {

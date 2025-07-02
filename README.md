@@ -7,15 +7,15 @@
 
 ### Inputs
 
-| option                     | required | default        | description                                                                                                                                                          |
-| -------------------------- | -------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| api-token                  | true     |                | API token for Shiplight AI                                                                                                                                           |
-| test-suite-id              | true     |                | Test suite ID                                                                                                                                                        |
-| environment-id | false     |                | Environment ID                                                                                                                                           |
-| environment-url | false     |                | Environment URL                                                                                                                                           |
-| github-comment             | false    | `true`         | If enabled, the action will comment on the pull request with the test run results                                                                                    |
-| github-token               | false    | `GITHUB_TOKEN` | Token used for leaving a comment on the pull request                                                                                                                 |
-| async                      | false    | `false`        | If enabled, will launch the tests but not wait for them to finish and the action will always output success. Note: GitHub comments will not function if this is set. |
+| option          | required | default        | description                                                                                                                                                          |
+| --------------- | -------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| api-token       | true     |                | API token for Shiplight AI                                                                                                                                           |
+| test-suite-id   | true     |                | Test suite ID                                                                                                                                                        |
+| environment-id  | false    |                | Environment ID                                                                                                                                                       |
+| environment-url | false    |                | Environment URL                                                                                                                                                      |
+| github-comment  | false    | `true`         | If enabled, the action will comment on the pull request with the test run results                                                                                    |
+| github-token    | false    | `GITHUB_TOKEN` | Token used for leaving a comment on the pull request                                                                                                                 |
+| async           | false    | `false`        | If enabled, will launch the tests but not wait for them to finish and the action will always output success. Note: GitHub comments will not function if this is set. |
 
 ### Outputs
 

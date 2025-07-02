@@ -21,9 +21,7 @@ export async function run(): Promise<void> {
     const apiToken: string = core.getInput('api-token')
     const testSuiteID: string = core.getInput('test-suite-id')
     const environmentID: string = core.getInput('environment-id')
-    const environmentURL: string = core.getInput(
-      'environment-url'
-    )
+    const environmentURL: string = core.getInput('environment-url')
     const githubComment: boolean = core.getInput('github-comment') === 'true'
     const githubToken: string = core.getInput('github-token')
     const async: boolean = core.getInput('async') === 'true'
@@ -54,7 +52,7 @@ export async function run(): Promise<void> {
     const { name, url, runID } = await client.start({
       testSuiteID,
       environmentID,
-      environmentURL,
+      environmentURL
     })
 
     // S2.1 if async is true, return
