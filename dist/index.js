@@ -123152,7 +123152,12 @@ async function run() {
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test suite name: ${name}`);
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run result: ${runResult.result}`);
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run details: ${url}`);
-        coreExports.setOutput('success', true);
+        if (runResult.result === 'Failed') {
+            coreExports.setFailed('Test run failed');
+        }
+        else {
+            coreExports.setOutput('success', true);
+        }
     }
     catch (error) {
         // Fail the workflow run if an error occurs
