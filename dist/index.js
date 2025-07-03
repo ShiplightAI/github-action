@@ -123090,6 +123090,10 @@ async function run() {
         const githubComment = coreExports.getInput('github-comment') === 'true';
         const githubToken = coreExports.getInput('github-token');
         const async = coreExports.getInput('async') === 'true';
+        let environmentIDNumber = undefined;
+        if (!isNaN(+environmentID)) {
+            environmentIDNumber = +environmentID;
+        }
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         coreExports.debug(`apiToken: ${apiToken}`);
         coreExports.debug(`testSuiteId: ${testSuiteID}`);
@@ -123111,7 +123115,7 @@ async function run() {
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] start the test run ...`);
         const { name, url, runID } = await client.start({
             testSuiteID,
-            environmentID,
+            environmentID: environmentIDNumber,
             environmentURL
         });
         // S2.1 if async is true, return

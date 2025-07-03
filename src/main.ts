@@ -26,6 +26,11 @@ export async function run(): Promise<void> {
     const githubToken: string = core.getInput('github-token')
     const async: boolean = core.getInput('async') === 'true'
 
+    let environmentIDNumber: number | undefined = undefined
+    if (!isNaN(+environmentID)) {
+      environmentIDNumber = +environmentID
+    }
+
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`apiToken: ${apiToken}`)
     core.debug(`testSuiteId: ${testSuiteID}`)
@@ -51,7 +56,7 @@ export async function run(): Promise<void> {
     )
     const { name, url, runID } = await client.start({
       testSuiteID,
-      environmentID,
+      environmentID: environmentIDNumber,
       environmentURL
     })
 
