@@ -73,14 +73,18 @@ export async function run(): Promise<void> {
       `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment start on the pull request ...`
     )
     if (githubComment) {
-      await github.comment({
-        testSuiteID: testSuiteID,
-        testSuiteName: name,
-        testSuiteRun: {
-          id: runID,
-          result: 'Pending'
-        } as any
-      })
+      try {
+        await github.comment({
+          testSuiteID: testSuiteID,
+          testSuiteName: name,
+          testSuiteRun: {
+            id: runID,
+            result: 'Pending'
+          } as any
+        })
+      } catch (error) {
+        core.setFailed('Failed to comment on the pull request')
+      }
     }
 
     // S3.1 wait for the test run to finish
@@ -96,11 +100,15 @@ export async function run(): Promise<void> {
       `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment finishedon the pull request ...`
     )
     if (githubComment) {
-      await github.comment({
-        testSuiteID: testSuiteID,
-        testSuiteName: name,
-        testSuiteRun: runResult
-      })
+      try {
+        await github.comment({
+          testSuiteID: testSuiteID,
+          testSuiteName: name,
+          testSuiteRun: runResult
+        })
+      } catch (error) {
+        core.setFailed('Failed to comment on the pull request')
+      }
     }
 
     core.info(
@@ -114,7 +122,10 @@ export async function run(): Promise<void> {
     )
 
     if (runResult.result === 'Failed') {
-      core.setFailed('Test run failed')
+      core.setFailed(
+        'Test run failed because of the test suite result is Failed'
+      )
+      core.setOutput('success', false)
     } else {
       core.setOutput('success', true)
     }

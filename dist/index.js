@@ -123126,14 +123126,19 @@ async function run() {
         // S3. comment on the pull request
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment start on the pull request ...`);
         if (githubComment) {
-            await github.comment({
-                testSuiteID: testSuiteID,
-                testSuiteName: name,
-                testSuiteRun: {
-                    id: runID,
-                    result: 'Pending'
-                }
-            });
+            try {
+                await github.comment({
+                    testSuiteID: testSuiteID,
+                    testSuiteName: name,
+                    testSuiteRun: {
+                        id: runID,
+                        result: 'Pending'
+                    }
+                });
+            }
+            catch (error) {
+                coreExports.setFailed('Failed to comment on the pull request');
+            }
         }
         // S3.1 wait for the test run to finish
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] wait for the test run to finish ...`);
@@ -123143,17 +123148,23 @@ async function run() {
         // S3.2 comment on the pull request
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment finishedon the pull request ...`);
         if (githubComment) {
-            await github.comment({
-                testSuiteID: testSuiteID,
-                testSuiteName: name,
-                testSuiteRun: runResult
-            });
+            try {
+                await github.comment({
+                    testSuiteID: testSuiteID,
+                    testSuiteName: name,
+                    testSuiteRun: runResult
+                });
+            }
+            catch (error) {
+                coreExports.setFailed('Failed to comment on the pull request');
+            }
         }
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test suite name: ${name}`);
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run result: ${runResult.result}`);
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run details: ${url}`);
         if (runResult.result === 'Failed') {
-            coreExports.setFailed('Test run failed');
+            coreExports.setFailed('Test run failed because of the test suite result is Failed');
+            coreExports.setOutput('success', false);
         }
         else {
             coreExports.setOutput('success', true);
