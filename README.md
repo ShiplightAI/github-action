@@ -1,7 +1,7 @@
 # GitHub Action to Shiplight
 
-![https://github.com/loggia-AI/github-action](https://img.shields.io/github/v/release/loggia-AI/github-action)
-![https://github.com/loggia-AI/github-action](https://github.com/loggia-AI/github-action/workflows/Continuous%20Integration/badge.svg)
+![https://github.com/ShiplightAI/github-action](https://img.shields.io/github/v/release/ShiplightAI/github-action)
+![https://github.com/ShiplightAI/github-action](https://github.com/ShiplightAI/github-action/workflows/Continuous%20Integration/badge.svg)
 
 ## Usage
 
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Shiplight Test
-        uses: loggia-AI/github-action@v1
+        uses: ShiplightAI/github-action@v1
         with:
           api-token: ${{ secrets.SHIPLIGHT_API_TOKEN }}
           test-suite-id: YOUR_SHIPLIGHT_TEST_SUITE_ID
