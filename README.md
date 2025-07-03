@@ -46,7 +46,7 @@ jobs:
         with:
           api-token: ${{ secrets.SHIPLIGHT_API_TOKEN }}
           test-suite-id: YOUR_SHIPLIGHT_TEST_SUITE_ID
-          environment-url: YOUR_SHIPLIGHT_TEST_SUITE_ENVIRONMENT_URL
+          environment-id: YOUR_SHIPLIGHT_ENVIRONMENT_ID
 ```
 
 ### License
