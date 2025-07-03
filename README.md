@@ -11,7 +11,7 @@
 | --------------- | -------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | api-token       | true     |                | API token for Shiplight AI                                                                                                                                           |
 | test-suite-id   | true     |                | Test suite ID                                                                                                                                                        |
-| environment-id  | false    |                | Environment ID                                                                                                                                                       |
+| environment-id  | true     |                | Environment ID                                                                                                                                                       |
 | environment-url | false    |                | Environment URL                                                                                                                                                      |
 | github-comment  | false    | `true`         | If enabled, the action will comment on the pull request with the test run results                                                                                    |
 | github-token    | false    | `GITHUB_TOKEN` | Token used for leaving a comment on the pull request                                                                                                                 |
