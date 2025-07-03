@@ -83,7 +83,7 @@ export async function run(): Promise<void> {
           } as any
         })
       } catch (error) {
-        core.setFailed('Failed to comment on the pull request')
+        // core.setFailed('Failed to comment on the pull request')
       }
     }
 
@@ -107,7 +107,8 @@ export async function run(): Promise<void> {
           testSuiteRun: runResult
         })
       } catch (error) {
-        core.setFailed('Failed to comment on the pull request')
+        // core.setFailed('Failed to comment on the pull request')
+        // core.warning('Failed to comment on the pull request')
       }
     }
 

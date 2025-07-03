@@ -123137,7 +123137,7 @@ async function run() {
                 });
             }
             catch (error) {
-                coreExports.setFailed('Failed to comment on the pull request');
+                // core.setFailed('Failed to comment on the pull request')
             }
         }
         // S3.1 wait for the test run to finish
@@ -123156,7 +123156,8 @@ async function run() {
                 });
             }
             catch (error) {
-                coreExports.setFailed('Failed to comment on the pull request');
+                // core.setFailed('Failed to comment on the pull request')
+                // core.warning('Failed to comment on the pull request')
             }
         }
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test suite name: ${name}`);
