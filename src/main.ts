@@ -113,7 +113,11 @@ export async function run(): Promise<void> {
       `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run details: ${url}`
     )
 
-    core.setOutput('success', true)
+    if (runResult.result === 'Failed') {
+      core.setFailed('Test run failed')
+    } else {
+      core.setOutput('success', true)
+    }
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) {
