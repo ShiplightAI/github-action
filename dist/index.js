@@ -123102,25 +123102,33 @@ async function run() {
         // S1. prepare
         coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] prepare ...`);
         const apiToken = coreExports.getInput('api-token');
-        const testSuiteID = coreExports.getInput('test-suite-id');
+        const testSuiteIDInput = coreExports.getInput('test-suite-id');
         const environmentID = coreExports.getInput('environment-id');
         const environmentURL = coreExports.getInput('environment-url');
         const githubComment = coreExports.getInput('github-comment') === 'true';
         const githubToken = coreExports.getInput('github-token');
         const async = coreExports.getInput('async') === 'true';
         const commitSHA = coreExports.getInput('commit-sha');
+        // Parse test suite IDs (supports single ID or comma-separated list for backward compatibility)
+        const testSuiteIDs = testSuiteIDInput
+            .split(',')
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0);
         let environmentIDNumber = undefined;
         if (!isNaN(+environmentID)) {
             environmentIDNumber = +environmentID;
         }
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         coreExports.debug(`apiToken: ${apiToken}`);
-        coreExports.debug(`testSuiteId: ${testSuiteID}`);
+        coreExports.debug(`testSuiteIds: ${JSON.stringify(testSuiteIDs)}`);
         coreExports.debug(`environmentID: ${environmentID}`);
         coreExports.debug(`testSuiteEnvironmentURL: ${environmentURL}`);
         coreExports.debug(`githubComment: ${githubComment}`);
         coreExports.debug(`githubToken: ${githubToken}`);
         coreExports.debug(`async: ${async}`);
+        if (testSuiteIDs.length === 0) {
+            throw new Error('At least one test suite ID is required');
+        }
         // client
         const client = new Client({
             apiToken,
@@ -123130,65 +123138,168 @@ async function run() {
         const github = new Github({
             token: githubToken
         });
-        // S2. start the test run
-        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] start the test run ...`);
-        const { name, url, runID } = await client.start({
-            testSuiteID,
-            environmentID: environmentIDNumber,
-            environmentURL
+        // S2. start all test runs in parallel
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] starting ${testSuiteIDs.length} test runs in parallel ...`);
+        const testRunPromises = testSuiteIDs.map(async (testSuiteID) => {
+            try {
+                const { name, url, runID } = await client.start({
+                    testSuiteID,
+                    environmentID: environmentIDNumber,
+                    environmentURL
+                });
+                return {
+                    testSuiteID,
+                    name,
+                    url,
+                    runID,
+                    error: null
+                };
+            }
+            catch (error) {
+                coreExports.warning(`Failed to start test suite ${testSuiteID}: ${error.message}`);
+                return {
+                    testSuiteID,
+                    name: `Test Suite ${testSuiteID}`,
+                    url: '',
+                    runID: 0,
+                    error: error.message
+                };
+            }
         });
+        const testRuns = await Promise.all(testRunPromises);
         // S2.1 if async is true, return
         if (async) {
-            coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] async mode is enabled, ignore wait for the test run to finish and no comment on the pull request`);
+            coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] async mode is enabled, ignore wait for the test runs to finish and no comment on the pull request`);
             return;
         }
-        // S3. comment on the pull request
-        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment start on the pull request ...`);
+        // S3. comment on the pull request with initial pending status
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] posting initial comments on the pull request ...`);
         if (githubComment) {
-            try {
-                await github.comment({
-                    commitSHA,
-                    testSuiteID: testSuiteID,
-                    testSuiteName: name,
-                    testSuiteRun: {
-                        id: runID,
-                        result: 'Pending'
+            const commentPromises = testRuns.map(async (testRun) => {
+                if (testRun.error || testRun.runID === 0) {
+                    // Comment with error status
+                    try {
+                        await github.comment({
+                            commitSHA,
+                            testSuiteID: testRun.testSuiteID,
+                            testSuiteName: testRun.name,
+                            testSuiteRun: {
+                                id: '',
+                                result: 'Failed',
+                                startTime: new Date().toISOString(),
+                                endTime: new Date().toISOString()
+                            }
+                        });
                     }
-                });
-            }
-            catch (error) {
-                coreExports.warning(`Failed to comment on the pull request: ${error.message}`);
-            }
+                    catch (error) {
+                        coreExports.warning(`Failed to comment error for test suite ${testRun.testSuiteID}: ${error.message}`);
+                    }
+                }
+                else {
+                    // Comment with pending status
+                    try {
+                        await github.comment({
+                            commitSHA,
+                            testSuiteID: testRun.testSuiteID,
+                            testSuiteName: testRun.name,
+                            testSuiteRun: {
+                                id: testRun.runID,
+                                result: 'Pending'
+                            }
+                        });
+                    }
+                    catch (error) {
+                        coreExports.warning(`Failed to comment pending for test suite ${testRun.testSuiteID}: ${error.message}`);
+                    }
+                }
+            });
+            await Promise.all(commentPromises);
         }
-        // S3.1 wait for the test run to finish
-        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] wait for the test run to finish ...`);
-        const runResult = await client.wait({
-            testSuiteRunID: runID
-        });
-        // S3.2 comment on the pull request
-        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] comment finishedon the pull request ...`);
-        if (githubComment) {
+        // S3.1 wait for all test runs to finish in parallel
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] waiting for all test runs to finish ...`);
+        const waitPromises = testRuns.map(async (testRun) => {
+            if (testRun.error || testRun.runID === 0) {
+                return {
+                    testSuiteID: testRun.testSuiteID,
+                    name: testRun.name,
+                    url: testRun.url,
+                    result: {
+                        result: 'Failed',
+                        startTime: new Date().toISOString(),
+                        endTime: new Date().toISOString()
+                    },
+                    error: testRun.error
+                };
+            }
             try {
-                await github.comment({
-                    commitSHA,
-                    testSuiteID: testSuiteID,
-                    testSuiteName: name,
-                    testSuiteRun: runResult
+                const result = await client.wait({
+                    testSuiteRunID: testRun.runID
                 });
+                return {
+                    testSuiteID: testRun.testSuiteID,
+                    name: testRun.name,
+                    url: testRun.url,
+                    result,
+                    error: null
+                };
             }
             catch (error) {
-                coreExports.warning(`Failed to comment on the pull request: ${error.message}`);
+                coreExports.warning(`Failed to wait for test suite ${testRun.testSuiteID}: ${error.message}`);
+                return {
+                    testSuiteID: testRun.testSuiteID,
+                    name: testRun.name,
+                    url: testRun.url,
+                    result: {
+                        result: 'Failed',
+                        startTime: new Date().toISOString(),
+                        endTime: new Date().toISOString()
+                    },
+                    error: error.message
+                };
             }
+        });
+        const finalResults = await Promise.all(waitPromises);
+        // S3.2 update comments with final results
+        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] updating comments with final results ...`);
+        if (githubComment) {
+            const updateCommentPromises = finalResults.map(async (finalResult) => {
+                try {
+                    await github.comment({
+                        commitSHA,
+                        testSuiteID: finalResult.testSuiteID,
+                        testSuiteName: finalResult.name,
+                        testSuiteRun: finalResult.result
+                    });
+                }
+                catch (error) {
+                    coreExports.warning(`Failed to update comment for test suite ${finalResult.testSuiteID}: ${error.message}`);
+                }
+            });
+            await Promise.all(updateCommentPromises);
         }
-        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test suite name: ${name}`);
-        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run result: ${runResult.result}`);
-        coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test run details: ${url}`);
-        if (runResult.result === 'Failed') {
-            coreExports.setFailed('Test run failed because of the test suite result is Failed');
-            coreExports.setOutput('success', false);
-        }
-        else {
-            coreExports.setOutput('success', true);
+        // Log results for each test suite
+        finalResults.forEach((finalResult) => {
+            coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test suite: ${finalResult.name} (${finalResult.testSuiteID})`);
+            coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Result: ${finalResult.result.result}`);
+            coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Details: ${finalResult.url}`);
+            if (finalResult.error) {
+                coreExports.info(`[${libExports.doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Error: ${finalResult.error}`);
+            }
+        });
+        // Determine overall success
+        const failedResults = finalResults.filter((result) => result.result.result === 'Failed');
+        const allSuccessful = failedResults.length === 0;
+        // Set outputs
+        coreExports.setOutput('success', allSuccessful);
+        coreExports.setOutput('results', JSON.stringify(finalResults.map((result) => ({
+            testSuiteID: result.testSuiteID,
+            name: result.name,
+            result: result.result.result,
+            url: result.url,
+            error: result.error
+        }))));
+        if (!allSuccessful) {
+            coreExports.setFailed(`${failedResults.length} out of ${finalResults.length} test runs failed`);
         }
     }
     catch (error) {
