@@ -13,7 +13,9 @@ inputs:
     description: api token for shiplight
     required: true
   test-suite-id:
-    description: test suite id
+    description:
+      test suite ID (single ID or comma-separated list, e.g., "suite1" or
+      "suite1,suite2,suite3")
     required: true
   environment-id:
     description: environment id
@@ -41,7 +43,9 @@ inputs:
 # Define your outputs here.
 outputs:
   success:
-    description: Whether the test run was successful
+    description: Whether all test runs were successful
+  results:
+    description: JSON string containing results for each test suite
 
 runs:
   using: node20
