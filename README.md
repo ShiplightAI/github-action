@@ -47,6 +47,7 @@ jobs:
           api-token: ${{ secrets.SHIPLIGHT_API_TOKEN }}
           test-suite-id: YOUR_SHIPLIGHT_TEST_SUITE_ID
           environment-id: YOUR_SHIPLIGHT_ENVIRONMENT_ID
+	  commit-sha: YOUR_COMMIT_SHA
 ```
 
 ### License

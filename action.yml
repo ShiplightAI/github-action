@@ -1,6 +1,6 @@
 name: shiplight-runner
 description: Use This GitHub Action to run tests on https://app.shiplight.ai
-author: Shiplight
+author: Shiplight AI
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
@@ -34,6 +34,9 @@ inputs:
       If enabled, will launch the tests but not wait for them to finish and the action will always output success.
       Note: GitHub comments will not function if this is set.
     default: 'false'
+  commit-sha:
+    description: 'The commit SHA to find the pull request for comment'
+    required: false
 
 # Define your outputs here.
 outputs:

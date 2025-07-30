@@ -25,6 +25,7 @@ export async function run(): Promise<void> {
     const githubComment: boolean = core.getInput('github-comment') === 'true'
     const githubToken: string = core.getInput('github-token')
     const async: boolean = core.getInput('async') === 'true'
+    const commitSHA: string = core.getInput('commit-sha')
 
     let environmentIDNumber: number | undefined = undefined
     if (!isNaN(+environmentID)) {
@@ -75,6 +76,7 @@ export async function run(): Promise<void> {
     if (githubComment) {
       try {
         await github.comment({
+          commitSHA,
           testSuiteID: testSuiteID,
           testSuiteName: name,
           testSuiteRun: {
@@ -82,8 +84,8 @@ export async function run(): Promise<void> {
             result: 'Pending'
           } as any
         })
-      } catch (error) {
-        // core.setFailed('Failed to comment on the pull request')
+      } catch (error: any) {
+        core.warning(`Failed to comment on the pull request: ${error.message}`)
       }
     }
 
@@ -102,13 +104,13 @@ export async function run(): Promise<void> {
     if (githubComment) {
       try {
         await github.comment({
+          commitSHA,
           testSuiteID: testSuiteID,
           testSuiteName: name,
           testSuiteRun: runResult
         })
-      } catch (error) {
-        // core.setFailed('Failed to comment on the pull request')
-        // core.warning('Failed to comment on the pull request')
+      } catch (error: any) {
+        core.warning(`Failed to comment on the pull request: ${error.message}`)
       }
     }
 
