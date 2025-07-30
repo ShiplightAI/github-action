@@ -106,49 +106,34 @@ export async function run(): Promise<void> {
 
     // S3. comment on the pull request with initial pending status
     core.info(
-      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] posting initial comments on the pull request ...`
+      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] posting initial comment on the pull request ...`
     )
     if (githubComment) {
-      const commentPromises = testRuns.map(async (testRun) => {
-        if (testRun.error || testRun.runID === 0) {
-          // Comment with error status
-          try {
-            await github.comment({
-              commitSHA,
-              testSuiteID: testRun.testSuiteID,
-              testSuiteName: testRun.name,
-              testSuiteRun: {
-                id: '',
-                result: 'Failed',
-                startTime: new Date().toISOString(),
-                endTime: new Date().toISOString()
-              } as any
-            })
-          } catch (error: any) {
-            core.warning(
-              `Failed to comment error for test suite ${testRun.testSuiteID}: ${error.message}`
-            )
-          }
-        } else {
-          // Comment with pending status
-          try {
-            await github.comment({
-              commitSHA,
-              testSuiteID: testRun.testSuiteID,
-              testSuiteName: testRun.name,
-              testSuiteRun: {
-                id: testRun.runID,
-                result: 'Pending'
-              } as any
-            })
-          } catch (error: any) {
-            core.warning(
-              `Failed to comment pending for test suite ${testRun.testSuiteID}: ${error.message}`
-            )
-          }
-        }
-      })
-      await Promise.all(commentPromises)
+      try {
+        const testSuites = testRuns.map((testRun) => ({
+          testSuiteID: testRun.testSuiteID,
+          testSuiteName: testRun.name,
+          testSuiteRun:
+            testRun.error || testRun.runID === 0
+              ? ({
+                  id: '',
+                  result: 'Failed',
+                  startTime: new Date().toISOString(),
+                  endTime: new Date().toISOString()
+                } as any)
+              : ({
+                  id: testRun.runID,
+                  result: 'Pending'
+                } as any)
+        }))
+
+        await github.comment({
+          commitSHA,
+          testSuites
+        })
+      } catch (error: any) {
+        core.warning(`Failed to comment on pull request: ${error.message}`)
+      }
     }
 
     // S3.1 wait for all test runs to finish in parallel
@@ -202,26 +187,27 @@ export async function run(): Promise<void> {
 
     const finalResults = await Promise.all(waitPromises)
 
-    // S3.2 update comments with final results
+    // S3.2 update comment with final results
     core.info(
-      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] updating comments with final results ...`
+      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] updating comment with final results ...`
     )
     if (githubComment) {
-      const updateCommentPromises = finalResults.map(async (finalResult) => {
-        try {
-          await github.comment({
-            commitSHA,
-            testSuiteID: finalResult.testSuiteID,
-            testSuiteName: finalResult.name,
-            testSuiteRun: finalResult.result
-          })
-        } catch (error: any) {
-          core.warning(
-            `Failed to update comment for test suite ${finalResult.testSuiteID}: ${error.message}`
-          )
-        }
-      })
-      await Promise.all(updateCommentPromises)
+      try {
+        const testSuites = finalResults.map((finalResult) => ({
+          testSuiteID: finalResult.testSuiteID,
+          testSuiteName: finalResult.name,
+          testSuiteRun: finalResult.result
+        }))
+
+        await github.comment({
+          commitSHA,
+          testSuites
+        })
+      } catch (error: any) {
+        core.warning(
+          `Failed to update comment on pull request: ${error.message}`
+        )
+      }
     }
 
     // Log results for each test suite
