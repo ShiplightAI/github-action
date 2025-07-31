@@ -39,6 +39,10 @@ inputs:
   commit-sha:
     description: 'The commit SHA to find the pull request for comment'
     required: false
+  timeout-seconds:
+    description: 'Maximum time to wait for test runs to complete (in seconds)'
+    required: false
+    default: '86400'
 
 # Define your outputs here.
 outputs:

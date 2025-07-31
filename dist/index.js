@@ -119005,14 +119005,14 @@ class Client {
         };
     }
     async wait(config) {
-        const { testSuiteRunID: testRunId } = config;
+        const { testSuiteRunID: testRunId, timeout = MAX_WAIT_TIME } = config;
         if (!testRunId) {
             throw new Error('Test run ID is required');
         }
         const url = `${API_URL}/run-results/${testRunId}`;
         const startTime = Date.now();
         while (true) {
-            if (Date.now() - startTime > MAX_WAIT_TIME) {
+            if (Date.now() - startTime > timeout) {
                 return {
                     result: 'Timeout'
                 };
@@ -123115,6 +123115,11 @@ async function run() {
         const githubToken = coreExports.getInput('github-token');
         const async = coreExports.getInput('async') === 'true';
         const commitSHA = coreExports.getInput('commit-sha');
+        const timeoutSecondsInput = coreExports.getInput('timeout-seconds');
+        const timeoutSeconds = timeoutSecondsInput
+            ? parseInt(timeoutSecondsInput, 10)
+            : MAX_WAIT_TIME / 1000;
+        const timeout = timeoutSeconds * 1000;
         // Parse test suite IDs (supports single ID or comma-separated list for backward compatibility)
         const testSuiteIDs = testSuiteIDInput
             .split(',')
@@ -123132,6 +123137,8 @@ async function run() {
         coreExports.debug(`githubComment: ${githubComment}`);
         coreExports.debug(`githubToken: ${githubToken}`);
         coreExports.debug(`async: ${async}`);
+        coreExports.debug(`timeoutSeconds: ${timeoutSeconds}`);
+        coreExports.debug(`timeout: ${timeout}`);
         if (testSuiteIDs.length === 0) {
             throw new Error('At least one test suite ID is required');
         }
@@ -123224,7 +123231,8 @@ async function run() {
             }
             try {
                 const result = await client.wait({
-                    testSuiteRunID: testRun.runID
+                    testSuiteRunID: testRun.runID,
+                    timeout
                 });
                 return {
                     testSuiteID: testRun.testSuiteID,

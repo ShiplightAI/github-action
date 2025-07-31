@@ -50,6 +50,7 @@ export interface StartConfig {
 
 export interface WaitConfig {
   testSuiteRunID: number
+  timeout?: number
 }
 
 export interface IClient {

@@ -87,7 +87,7 @@ export class Client implements IClient {
   }
 
   async wait(config: WaitConfig) {
-    const { testSuiteRunID: testRunId } = config
+    const { testSuiteRunID: testRunId, timeout = MAX_WAIT_TIME } = config
     if (!testRunId) {
       throw new Error('Test run ID is required')
     }
@@ -96,7 +96,7 @@ export class Client implements IClient {
     const startTime = Date.now()
 
     while (true) {
-      if (Date.now() - startTime > MAX_WAIT_TIME) {
+      if (Date.now() - startTime > timeout) {
         return {
           result: 'Timeout' as TestRunResult
         } as any

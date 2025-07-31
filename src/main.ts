@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { doreamon } from '@zodash/doreamon'
 import { Client } from './client/index.js'
 import { Github } from './github/github.js'
+import { MAX_WAIT_TIME } from './client/constants.js'
 
 /**
  * The main function for the action.
@@ -26,6 +27,11 @@ export async function run(): Promise<void> {
     const githubToken: string = core.getInput('github-token')
     const async: boolean = core.getInput('async') === 'true'
     const commitSHA: string = core.getInput('commit-sha')
+    const timeoutSecondsInput: string = core.getInput('timeout-seconds')
+    const timeoutSeconds: number = timeoutSecondsInput
+      ? parseInt(timeoutSecondsInput, 10)
+      : MAX_WAIT_TIME / 1000
+    const timeout: number = timeoutSeconds * 1000
 
     // Parse test suite IDs (supports single ID or comma-separated list for backward compatibility)
     const testSuiteIDs = testSuiteIDInput
@@ -46,6 +52,8 @@ export async function run(): Promise<void> {
     core.debug(`githubComment: ${githubComment}`)
     core.debug(`githubToken: ${githubToken}`)
     core.debug(`async: ${async}`)
+    core.debug(`timeoutSeconds: ${timeoutSeconds}`)
+    core.debug(`timeout: ${timeout}`)
 
     if (testSuiteIDs.length === 0) {
       throw new Error('At least one test suite ID is required')
@@ -158,7 +166,8 @@ export async function run(): Promise<void> {
 
       try {
         const result = await client.wait({
-          testSuiteRunID: testRun.runID
+          testSuiteRunID: testRun.runID,
+          timeout
         })
         return {
           testSuiteID: testRun.testSuiteID,
