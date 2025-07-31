@@ -5,6 +5,16 @@ import { Github } from './github/github.js'
 import { MAX_WAIT_TIME } from './client/constants.js'
 
 /**
+ * Generate a unique identifier as backup for GITHUB_RUN_ID
+ * Format: timestamp-random (e.g., "1704067200000-abc123")
+ */
+function generateUID(): string {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 8)
+  return `${timestamp}-${random}`
+}
+
+/**
  * The main function for the action.
  *
  * @returns Resolves when the action is complete.
@@ -14,6 +24,10 @@ export async function run(): Promise<void> {
     // process.env['INPUT_API-TOKEN'] = process.env.API_TOKEN || ''
     // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
     // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
+
+    // Generate unique identifier for this run
+    const runIdentifier = process.env.GITHUB_RUN_ID || generateUID()
+    const usingGitHubRunId = !!process.env.GITHUB_RUN_ID
 
     // S1. prepare
     core.info(
@@ -54,6 +68,9 @@ export async function run(): Promise<void> {
     core.debug(`async: ${async}`)
     core.debug(`timeoutSeconds: ${timeoutSeconds}`)
     core.debug(`timeout: ${timeout}`)
+    core.debug(
+      `runIdentifier: ${runIdentifier} (using ${usingGitHubRunId ? 'GITHUB_RUN_ID' : 'generated UID'})`
+    )
 
     if (testSuiteIDs.length === 0) {
       throw new Error('At least one test suite ID is required')
@@ -136,6 +153,7 @@ export async function run(): Promise<void> {
         }))
 
         await github.comment({
+          identifier: runIdentifier,
           commitSHA,
           testSuites
         })
@@ -209,6 +227,7 @@ export async function run(): Promise<void> {
         }))
 
         await github.comment({
+          identifier: runIdentifier,
           commitSHA,
           testSuites
         })

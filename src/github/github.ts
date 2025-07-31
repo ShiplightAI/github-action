@@ -15,6 +15,7 @@ export interface Config {
 }
 
 export interface CommentConfig {
+  identifier: string
   commitSHA: string
   testSuites: Array<{
     testSuiteID: string
@@ -60,7 +61,7 @@ export class Github {
       return
     }
 
-    const commentIdentifier = `<!-- shiplight_test_suites -->`
+    const commentIdentifier = `<!-- shiplight_tests ${config.identifier} -->`
 
     // Generate table rows for all test suites
     const tableRows = config.testSuites
