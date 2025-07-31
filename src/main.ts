@@ -5,17 +5,6 @@ import { Github } from './github/github.js'
 import { MAX_WAIT_TIME } from './client/constants.js'
 
 /**
- * Generate a unique identifier as backup for GITHUB_RUN_ID
- * Format: timestamp-random (e.g., "1704067200000-abc123")
- * This is used when GITHUB_RUN_ID is not available (e.g., local development)
- */
-function generateUID(): string {
-  const timestamp = Date.now()
-  const random = Math.random().toString(36).substring(2, 8)
-  return `${timestamp}-${random}`
-}
-
-/**
  * The main function for the action.
  *
  * @returns Resolves when the action is complete.
@@ -25,12 +14,6 @@ export async function run(): Promise<void> {
     // process.env['INPUT_API-TOKEN'] = process.env.API_TOKEN || ''
     // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
     // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
-
-    // Generate unique identifier for this run and step
-    const baseId = process.env.GITHUB_RUN_ID || generateUID()
-    const stepId = process.env.GITHUB_ACTION || 'unknown-step'
-    const runIdentifier = `${baseId}-${stepId}`
-    const usingGitHubRunId = !!process.env.GITHUB_RUN_ID
 
     // S1. prepare
     core.info(
@@ -50,6 +33,13 @@ export async function run(): Promise<void> {
       : MAX_WAIT_TIME / 1000
     const timeout: number = timeoutSeconds * 1000
 
+    // Generate unique identifier based on environment and test suites
+    const environmentIDSafe = environmentID || 'default-env'
+    const testSuiteIDSafe = testSuiteIDInput
+      .replace(/[^a-zA-Z0-9,-]/g, '')
+      .replace(/,/g, '_')
+    const runIdentifier = `${environmentIDSafe}-${testSuiteIDSafe}`
+
     // Parse test suite IDs (supports single ID or comma-separated list for backward compatibility)
     const testSuiteIDs = testSuiteIDInput
       .split(',')
@@ -64,18 +54,19 @@ export async function run(): Promise<void> {
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.info(`apiToken: ${apiToken}`)
     core.info(`testSuiteIds: ${JSON.stringify(testSuiteIDs)}`)
-    core.info(`environmentID: ${environmentID}`)
     core.info(`testSuiteEnvironmentURL: ${environmentURL}`)
     core.info(`githubComment: ${githubComment}`)
     core.info(`githubToken: ${githubToken}`)
     core.info(`async: ${async}`)
     core.info(`timeoutSeconds: ${timeoutSeconds}`)
     core.info(`timeout: ${timeout}`)
+    core.info(`environmentID: ${environmentID} -> safe: ${environmentIDSafe}`)
     core.info(
-      `baseId: ${baseId} (using ${usingGitHubRunId ? 'GITHUB_RUN_ID' : 'generated UID'})`
+      `testSuiteIDInput: ${testSuiteIDInput} -> safe: ${testSuiteIDSafe}`
     )
-    core.info(`stepId: ${stepId} (from GITHUB_ACTION)`)
-    core.info(`runIdentifier: ${runIdentifier} (baseId-stepId)`)
+    core.info(
+      `runIdentifier: ${runIdentifier} (environmentID-testSuiteIDInput)`
+    )
 
     if (testSuiteIDs.length === 0) {
       throw new Error('At least one test suite ID is required')
