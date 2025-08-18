@@ -67,10 +67,24 @@ export class Github {
     const tableRows = config.testSuites
       .map((suite) => {
         const testSuiteURL = `${APP_URL}/test-suites/${suite.testSuiteID}`
-        const testSuiteRunResultURL = `${APP_URL}/run-results/${suite.testSuiteRun?.id}`
+        const runId = suite.testSuiteRun?.id
+        // Simple check: runId exists and is not 0 or empty
+        const hasValidRunId = runId && runId !== 0 && String(runId) !== ''
+
+        // Log for debugging
+        core.debug(`Suite: ${suite.testSuiteName}, runId: ${runId} (type: ${typeof runId}), hasValidRunId: ${hasValidRunId}`)
 
         const name = `[${suite.testSuiteName}](${testSuiteURL})`
-        const result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result} ([Inspect](${testSuiteRunResultURL}))`
+
+        let result: string
+        if (hasValidRunId) {
+          const testSuiteRunResultURL = `${APP_URL}/run-results/${runId}`
+          result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result} ([Inspect](${testSuiteRunResultURL}))`
+        } else {
+          // For cases without valid run IDs, don't show inspect link
+          const resultText = suite.testSuiteRun?.result || 'Failed'
+          result = `${resultEmoji[resultText]} ${resultText}`
+        }
         const startTime = suite.testSuiteRun?.startTime
           ? new Date(suite.testSuiteRun.startTime).toLocaleString('en-US', {
               timeZone: 'UTC'

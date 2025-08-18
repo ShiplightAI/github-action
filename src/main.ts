@@ -170,6 +170,7 @@ export async function run(): Promise<void> {
           name: testRun.name,
           url: testRun.url,
           result: {
+            ...(testRun.runID > 0 && { id: testRun.runID }), // Only include ID if valid
             result: 'Failed',
             startTime: new Date().toISOString(),
             endTime: new Date().toISOString()
@@ -199,6 +200,7 @@ export async function run(): Promise<void> {
           name: testRun.name,
           url: testRun.url,
           result: {
+            id: testRun.runID, // Preserve the original run ID from the successful start
             result: 'Failed',
             startTime: new Date().toISOString(),
             endTime: new Date().toISOString()
