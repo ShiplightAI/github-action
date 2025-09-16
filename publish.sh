@@ -55,11 +55,40 @@ fi
 echo ""
 echo "🏷️  Step 4: Version Selection"
 echo "Current tags:"
-git tag | tail -5
+git tag | sort -V | tail -5
 echo ""
-echo "What version do you want to release?"
-echo "Previous version was likely v1.2.5"
-read -p "Enter new version (e.g., v1.2.6): " VERSION
+
+# Get the latest version tag and suggest next patch version
+LATEST_TAG=$(git tag | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -1)
+if [[ -n $LATEST_TAG ]]; then
+  # Extract version numbers
+  VERSION_PARTS=(${LATEST_TAG//v/})
+  VERSION_PARTS=(${VERSION_PARTS//./ })
+  MAJOR=${VERSION_PARTS[0]}
+  MINOR=${VERSION_PARTS[1]}
+  PATCH=${VERSION_PARTS[2]}
+
+  # Calculate next versions
+  NEXT_PATCH=$((PATCH + 1))
+  NEXT_MINOR=$((MINOR + 1))
+  NEXT_MAJOR=$((MAJOR + 1))
+
+  echo "Latest version: $LATEST_TAG"
+  echo ""
+  echo "Suggested versions:"
+  echo "  Patch (bug fixes):       v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+  echo "  Minor (new features):    v${MAJOR}.${NEXT_MINOR}.0"
+  echo "  Major (breaking changes): v${NEXT_MAJOR}.0.0"
+  echo ""
+  DEFAULT_VERSION="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+  read -p "Enter new version (default: ${DEFAULT_VERSION}): " VERSION
+  VERSION=${VERSION:-$DEFAULT_VERSION}
+else
+  echo "No version tags found"
+  DEFAULT_VERSION="v1.0.0"
+  read -p "Enter new version (default: ${DEFAULT_VERSION}): " VERSION
+  VERSION=${VERSION:-$DEFAULT_VERSION}
+fi
 
 if [[ ! $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "❌ Invalid version format. Use format like v1.2.6"
