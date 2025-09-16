@@ -40,7 +40,6 @@
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",
     "@rollup/plugin-json": "^6.1.0",
-    "@zodash/doreamon": "^1.2.9",
     "globals": "^16.2.0"
   },
   "devDependencies": {

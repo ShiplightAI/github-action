@@ -1,5 +1,4 @@
 import * as core from '@actions/core'
-import { doreamon } from '@zodash/doreamon'
 import { Client } from './client/index.js'
 import { Github } from './github/github.js'
 import { MAX_WAIT_TIME } from './client/constants.js'
@@ -16,9 +15,9 @@ export async function run(): Promise<void> {
     // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
 
     // S1. prepare
-    core.info(
-      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] prepare ...`
-    )
+    const timestamp = () =>
+      new Date().toISOString().replace('T', ' ').substring(0, 19)
+    core.info(`[${timestamp()}][shiplight] prepare ...`)
     const apiToken: string = core.getInput('api-token')
     const testSuiteIDInput: string = core.getInput('test-suite-id')
     const environmentID: string = core.getInput('environment-id')
@@ -51,8 +50,20 @@ export async function run(): Promise<void> {
       environmentIDNumber = +environmentID
     }
 
+    // Validate API token
+    const trimmedApiToken = apiToken.trim()
+    if (!trimmedApiToken) {
+      throw new Error('API token is required but was not provided')
+    }
+    if (trimmedApiToken.length < 10) {
+      throw new Error('API token appears to be invalid (too short)')
+    }
+
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.info(`apiToken: ${apiToken}`)
+    core.debug(
+      `apiToken: ${trimmedApiToken.substring(0, 8)}...${trimmedApiToken.length > 8 ? '***' : ''}`
+    )
+    core.info(`apiToken: ${trimmedApiToken ? '***' : 'not provided'}`)
     core.info(`testSuiteIds: ${JSON.stringify(testSuiteIDs)}`)
     core.info(`testSuiteEnvironmentURL: ${environmentURL}`)
     core.info(`githubComment: ${githubComment}`)
@@ -74,7 +85,7 @@ export async function run(): Promise<void> {
 
     // client
     const client = new Client({
-      apiToken,
+      apiToken: trimmedApiToken,
       trigger: 'GITHUB_ACTION'
     })
     // github
@@ -84,7 +95,7 @@ export async function run(): Promise<void> {
 
     // S2. start all test runs in parallel
     core.info(
-      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] starting ${testSuiteIDs.length} test runs in parallel ...`
+      `[${timestamp()}][shiplight] starting ${testSuiteIDs.length} test runs in parallel ...`
     )
 
     const testRunPromises = testSuiteIDs.map(async (testSuiteID) => {
@@ -120,14 +131,14 @@ export async function run(): Promise<void> {
     // S2.1 if async is true, return
     if (async) {
       core.info(
-        `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] async mode is enabled, ignore wait for the test runs to finish and no comment on the pull request`
+        `[${timestamp()}][shiplight] async mode is enabled, ignore wait for the test runs to finish and no comment on the pull request`
       )
       return
     }
 
     // S3. comment on the pull request with initial pending status
     core.info(
-      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] posting initial comment on the pull request ...`
+      `[${timestamp()}][shiplight] posting initial comment on the pull request ...`
     )
     if (githubComment) {
       try {
@@ -160,7 +171,7 @@ export async function run(): Promise<void> {
 
     // S3.1 wait for all test runs to finish in parallel
     core.info(
-      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] waiting for all test runs to finish ...`
+      `[${timestamp()}][shiplight] waiting for all test runs to finish ...`
     )
 
     const waitPromises = testRuns.map(async (testRun) => {
@@ -214,7 +225,7 @@ export async function run(): Promise<void> {
 
     // S3.2 update comment with final results
     core.info(
-      `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] updating comment with final results ...`
+      `[${timestamp()}][shiplight] updating comment with final results ...`
     )
     if (githubComment) {
       try {
@@ -239,18 +250,14 @@ export async function run(): Promise<void> {
     // Log results for each test suite
     finalResults.forEach((finalResult) => {
       core.info(
-        `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Test suite: ${finalResult.name} (${finalResult.testSuiteID})`
+        `[${timestamp()}][shiplight] Test suite: ${finalResult.name} (${finalResult.testSuiteID})`
       )
       core.info(
-        `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Result: ${finalResult.result.result}`
+        `[${timestamp()}][shiplight] Result: ${finalResult.result.result}`
       )
-      core.info(
-        `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Details: ${finalResult.url}`
-      )
+      core.info(`[${timestamp()}][shiplight] Details: ${finalResult.url}`)
       if (finalResult.error) {
-        core.info(
-          `[${doreamon.date().format('YYYY-MM-DD HH:mm:ss')}][shiplight] Error: ${finalResult.error}`
-        )
+        core.info(`[${timestamp()}][shiplight] Error: ${finalResult.error}`)
       }
     })
 

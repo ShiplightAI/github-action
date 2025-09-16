@@ -72,7 +72,9 @@ export class Github {
         const hasValidRunId = runId && runId !== 0 && String(runId) !== ''
 
         // Log for debugging
-        core.debug(`Suite: ${suite.testSuiteName}, runId: ${runId} (type: ${typeof runId}), hasValidRunId: ${hasValidRunId}`)
+        core.debug(
+          `Suite: ${suite.testSuiteName}, runId: ${runId} (type: ${typeof runId}), hasValidRunId: ${hasValidRunId}`
+        )
 
         const name = `[${suite.testSuiteName}](${testSuiteURL})`
 

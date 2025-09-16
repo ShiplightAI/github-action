@@ -37,13 +37,21 @@ describe('main.ts', () => {
   //   )
   // })
 
-  it('Sets a failed status', async () => {
-    // Clear the getInput mock and return an invalid value.
-    core.getInput.mockClear().mockReturnValueOnce('this is not a number')
+  it('Sets a failed status for missing API token', async () => {
+    // Clear the getInput mock and return empty API token
+    core.getInput
+      .mockClear()
+      .mockReturnValueOnce('') // api-token (empty)
+      .mockReturnValueOnce('1') // test-suite-id
+      .mockReturnValueOnce('1') // environment-id
+      .mockReturnValue('') // other inputs
 
     await run()
 
     // Verify that the action was marked as failed.
-    expect(core.setFailed).toHaveBeenNthCalledWith(1, 'Unauthorized')
+    expect(core.setFailed).toHaveBeenNthCalledWith(
+      1,
+      'API token is required but was not provided'
+    )
   })
 })
