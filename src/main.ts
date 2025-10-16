@@ -223,16 +223,44 @@ export async function run(): Promise<void> {
 
     const finalResults = await Promise.all(waitPromises)
 
-    // S3.2 update comment with final results
+    // S3.2 Fetch detailed results for failed suite runs
+    core.info(
+      `[${timestamp()}][shiplight] fetching detailed results for failed runs ...`
+    )
+    const detailedResultsPromises = finalResults.map(async (finalResult) => {
+      // Only fetch detailed results for failed runs
+      if (finalResult.result.result === 'Failed' && finalResult.result.id) {
+        try {
+          const detailedData = await client.getDetailedResults(
+            finalResult.result.id
+          )
+          return {
+            ...finalResult,
+            testCaseResults: detailedData.testCaseResults || []
+          }
+        } catch (error: any) {
+          core.warning(
+            `Failed to fetch detailed results for run ${finalResult.result.id}: ${error.message}`
+          )
+          return finalResult
+        }
+      }
+      return finalResult
+    })
+
+    const finalResultsWithDetails = await Promise.all(detailedResultsPromises)
+
+    // S3.3 update comment with final results
     core.info(
       `[${timestamp()}][shiplight] updating comment with final results ...`
     )
     if (githubComment) {
       try {
-        const testSuites = finalResults.map((finalResult) => ({
+        const testSuites = finalResultsWithDetails.map((finalResult) => ({
           testSuiteID: finalResult.testSuiteID,
           testSuiteName: finalResult.name,
-          testSuiteRun: finalResult.result
+          testSuiteRun: finalResult.result,
+          testCaseResults: (finalResult as any).testCaseResults
         }))
 
         await github.comment({

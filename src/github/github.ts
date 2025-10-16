@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { context, getOctokit } from '@actions/github'
-import { TestRun } from '../client/entity.js'
+import { TestRun, TestCaseResult } from '../client/entity.js'
 import { APP_URL } from '../client/constants.js'
 
 const resultEmoji = {
@@ -21,6 +21,7 @@ export interface CommentConfig {
     testSuiteID: string
     testSuiteName: string
     testSuiteRun: TestRun
+    testCaseResults?: TestCaseResult[]
   }>
 }
 
@@ -78,15 +79,49 @@ export class Github {
 
         const name = `[${suite.testSuiteName}](${testSuiteURL})`
 
+        // Build result column with pass/fail counts
+        const passedCount = suite.testSuiteRun?.passedTestCaseCount || 0
+        const failedCount = suite.testSuiteRun?.failedTestCaseCount || 0
+        const totalCount = suite.testSuiteRun?.totalTestCaseCount || 0
+
         let result: string
         if (hasValidRunId) {
           const testSuiteRunResultURL = `${APP_URL}/run-results/${runId}`
-          result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result} ([Inspect](${testSuiteRunResultURL}))`
+          const counts =
+            totalCount > 0 ? ` (${passedCount}/${totalCount} passed)` : ''
+          result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result}${counts} [Inspect](${testSuiteRunResultURL})`
         } else {
           // For cases without valid run IDs, don't show inspect link
           const resultText = suite.testSuiteRun?.result || 'Failed'
           result = `${resultEmoji[resultText]} ${resultText}`
         }
+
+        // Add expandable failure details if there are failed tests
+        if (
+          failedCount > 0 &&
+          suite.testCaseResults &&
+          suite.testCaseResults.length > 0
+        ) {
+          const failedTests = suite.testCaseResults.filter(
+            (tc) => tc.result === 'Failed'
+          )
+          if (failedTests.length > 0) {
+            const failureList = failedTests
+              .map((tc) => {
+                const testCaseURL = `${APP_URL}/test-case-results/${tc.id}`
+                const summary = tc.summary || 'No details available'
+                // Escape special characters in summary for markdown
+                const escapedSummary = summary
+                  .replace(/\n/g, '<br>')
+                  .replace(/\|/g, '\\|')
+                return `• [Test Case #${tc.testCaseId}](${testCaseURL}): ${escapedSummary}`
+              })
+              .join('<br>')
+
+            result += `<br><details><summary>Show ${failedTests.length} failure(s)</summary><br>${failureList}</details>`
+          }
+        }
+
         const startTime = suite.testSuiteRun?.startTime
           ? new Date(suite.testSuiteRun.startTime).toLocaleString('en-US', {
               timeZone: 'UTC'
