@@ -26,6 +26,26 @@ export interface TestRun {
   endTime: string
 }
 
+export interface TestCaseResult {
+  id: number
+  testCaseId: number
+  testRunId: number
+  result: TestRunResult
+  summary?: string
+  startTime?: string
+  endTime?: string
+  report?: Array<{
+    resultJson?: Record<
+      string,
+      {
+        status?: string
+        message?: string
+        description?: string
+      }
+    >
+  }>
+}
+
 export type TestStartResponse = {
   success: boolean
   message: string
@@ -40,6 +60,13 @@ export type TestWaitResponse = {
   message: string
 } & {
   testRun: TestRun
+}
+
+export interface DetailedTestRunResponse {
+  success: boolean
+  message?: string
+  testRun: TestRun
+  testCaseResults?: TestCaseResult[]
 }
 
 export interface StartConfig {

@@ -25,14 +25,12 @@ describe('main.ts', () => {
     jest.resetAllMocks()
   })
 
+  // TODO: Add test for url output
   // it('Sets the url output', async () => {
   //   await run()
-
-  //   // Verify the time output was set.
   //   expect(core.setOutput).toHaveBeenNthCalledWith(
   //     1,
   //     'url',
-  //     // Simple regex to match a time string in the format HH:MM:SS.
   //     expect.stringMatching(/^\w+/)
   //   )
   // })

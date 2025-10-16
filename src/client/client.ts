@@ -346,4 +346,47 @@ export class Client implements IClient {
       await delay(POLL_INTERVAL)
     }
   }
+
+  async getDetailedResults(testRunID: number) {
+    if (!testRunID) {
+      throw new Error('Test run ID is required')
+    }
+
+    const url = `${API_URL}/run-results/${testRunID}`
+
+    try {
+      const response = await fetchWithRetry(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.apiToken}`
+        }
+      })
+
+      if (response.status === 401) {
+        throw new Error(
+          'Authentication failed: Invalid API token or token expired'
+        )
+      }
+
+      if (response.status === 404) {
+        throw new Error(`Test run not found: ${testRunID}`)
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data: any = await response.json()
+
+      if (data?.success === false) {
+        throw new Error(data?.message || 'API request failed')
+      }
+
+      return data
+    } catch (error) {
+      core.debug(`[${timestamp()}][client.getDetailedResults] Error: ${error}`)
+      throw error
+    }
+  }
 }
