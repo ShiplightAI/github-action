@@ -27276,13 +27276,13 @@ function requireCore () {
 var coreExports = requireCore();
 
 // APP_URL is the base url for the shiplight app
-const APP_URL = 'https://app.shiplight.ai';
+const APP_URL = process.env.SHIPLIGHT_APP_URL || 'https://app.shiplight.ai';
 // API_URL is the base url for the shiplight api server
-const API_URL = 'https://api.shiplight.ai';
+const API_URL = process.env.SHIPLIGHT_API_URL || 'https://api.shiplight.ai';
 // MAX_WAIT_TIME is the maximum time to wait for a test run to finish
 const MAX_WAIT_TIME = 24 * 60 * 60 * 1000; // 24 hours
 // POLL_INTERVAL is the interval to poll the test run status
-const POLL_INTERVAL = 5000; // 5 seconds
+const POLL_INTERVAL = 10000; // 10 seconds
 
 // Helper function for delays
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -27515,6 +27515,39 @@ class Client {
                 }
             }
             await delay(POLL_INTERVAL);
+        }
+    }
+    async getDetailedResults(testRunID) {
+        if (!testRunID) {
+            throw new Error('Test run ID is required');
+        }
+        const url = `${API_URL}/run-results/${testRunID}`;
+        try {
+            const response = await fetchWithRetry(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${this.config.apiToken}`
+                }
+            });
+            if (response.status === 401) {
+                throw new Error('Authentication failed: Invalid API token or token expired');
+            }
+            if (response.status === 404) {
+                throw new Error(`Test run not found: ${testRunID}`);
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const data = await response.json();
+            if (data?.success === false) {
+                throw new Error(data?.message || 'API request failed');
+            }
+            return data;
+        }
+        catch (error) {
+            coreExports.debug(`[${timestamp()}][client.getDetailedResults] Error: ${error}`);
+            throw error;
         }
     }
 }
@@ -31480,6 +31513,32 @@ const resultEmoji = {
     Failed: '❌',
     Skipped: '⏭️'
 };
+/**
+ * Extract failure summary from test case report when summary is null
+ */
+function extractFailureSummary(testCase) {
+    if (testCase.summary) {
+        return testCase.summary;
+    }
+    // Try to extract from report
+    if (testCase.report && testCase.report.length > 0) {
+        const report = testCase.report[0];
+        if (report.resultJson) {
+            // Find the first failed step
+            for (const [stepKey, stepData] of Object.entries(report.resultJson)) {
+                if (stepData.status === 'failure' && stepData.message) {
+                    const stepDesc = stepData.description || stepKey;
+                    // Truncate long messages
+                    const message = stepData.message.length > 150
+                        ? stepData.message.substring(0, 150) + '...'
+                        : stepData.message;
+                    return `Step "${stepDesc}": ${message}`;
+                }
+            }
+        }
+    }
+    return 'No details available';
+}
 class Github {
     core;
     constructor(config) {
@@ -31519,10 +31578,14 @@ class Github {
             // Log for debugging
             coreExports.debug(`Suite: ${suite.testSuiteName}, runId: ${runId} (type: ${typeof runId}), hasValidRunId: ${hasValidRunId}`);
             const name = `[${suite.testSuiteName}](${testSuiteURL})`;
+            // Build result column with pass/fail counts
+            const passedCount = suite.testSuiteRun?.passedTestCaseCount || 0;
+            const totalCount = suite.testSuiteRun?.totalTestCaseCount || 0;
             let result;
             if (hasValidRunId) {
                 const testSuiteRunResultURL = `${APP_URL}/run-results/${runId}`;
-                result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result} ([Inspect](${testSuiteRunResultURL}))`;
+                const counts = totalCount > 0 ? ` (${passedCount}/${totalCount} passed)` : '';
+                result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result}${counts} [Inspect](${testSuiteRunResultURL})`;
             }
             else {
                 // For cases without valid run IDs, don't show inspect link
@@ -31542,13 +31605,43 @@ class Github {
             return `| ${name} | ${result} | ${startTime} | ${endTime} |`;
         })
             .join('\n');
+        // Generate failure details section (after the table)
+        const failureSections = config.testSuites
+            .filter((suite) => {
+            const failedCount = suite.testSuiteRun?.failedTestCaseCount || 0;
+            return (failedCount > 0 &&
+                suite.testCaseResults &&
+                suite.testCaseResults.length > 0);
+        })
+            .map((suite) => {
+            const failedTests = suite.testCaseResults.filter((tc) => tc.result === 'Failed');
+            if (failedTests.length === 0)
+                return null;
+            const failureList = failedTests
+                .map((tc) => {
+                const testCaseURL = `${APP_URL}/test-case-results/${tc.id}`;
+                const summary = extractFailureSummary(tc);
+                return `- **[Test Case #${tc.testCaseId}](${testCaseURL})**: ${summary}`;
+            })
+                .join('\n');
+            return `<details>
+<summary><strong>${suite.testSuiteName}</strong> - ${failedTests.length} failed test${failedTests.length > 1 ? 's' : ''}</summary>
+
+${failureList}
+</details>`;
+        })
+            .filter(Boolean)
+            .join('\n\n');
+        const failureSection = failureSections
+            ? `\n## ❌ Failed Tests\n\n${failureSections}\n`
+            : '';
         const body = `${commentIdentifier}
 # [Shiplight](https://app.shiplight.ai) Runner
 
 | Name | Result | Start Time (UTC) | End Time (UTC) |
 | :--- | :----- | :------ | :------ |
 ${tableRows}
-
+${failureSection}
 ---
 _This comment was automatically generated by [Shiplight GitHub Action](https://github.com/marketplace/actions/shiplight-runner)_
 `;
@@ -31764,14 +31857,35 @@ async function run() {
             }
         });
         const finalResults = await Promise.all(waitPromises);
-        // S3.2 update comment with final results
+        // S3.2 Fetch detailed results for failed suite runs
+        coreExports.info(`[${timestamp()}][shiplight] fetching detailed results for failed runs ...`);
+        const detailedResultsPromises = finalResults.map(async (finalResult) => {
+            // Only fetch detailed results for failed runs
+            if (finalResult.result.result === 'Failed' && finalResult.result.id) {
+                try {
+                    const detailedData = await client.getDetailedResults(finalResult.result.id);
+                    return {
+                        ...finalResult,
+                        testCaseResults: detailedData.testCaseResults || []
+                    };
+                }
+                catch (error) {
+                    coreExports.warning(`Failed to fetch detailed results for run ${finalResult.result.id}: ${error.message}`);
+                    return finalResult;
+                }
+            }
+            return finalResult;
+        });
+        const finalResultsWithDetails = await Promise.all(detailedResultsPromises);
+        // S3.3 update comment with final results
         coreExports.info(`[${timestamp()}][shiplight] updating comment with final results ...`);
         if (githubComment) {
             try {
-                const testSuites = finalResults.map((finalResult) => ({
+                const testSuites = finalResultsWithDetails.map((finalResult) => ({
                     testSuiteID: finalResult.testSuiteID,
                     testSuiteName: finalResult.name,
-                    testSuiteRun: finalResult.result
+                    testSuiteRun: finalResult.result,
+                    testCaseResults: finalResult.testCaseResults
                 }));
                 await github.comment({
                     identifier: runIdentifier,

@@ -127,7 +127,7 @@ git tag -fa $MINOR_VERSION -m "Update $MINOR_VERSION tag to $VERSION"
 echo ""
 echo "📤 Step 6: Pushing to GitHub..."
 echo "This will push:"
-echo "  - All commits to main branch"
+echo "  - All commits to master branch"
 echo "  - Tag $VERSION (new)"
 echo "  - Tag $MINOR_VERSION (updated)"
 echo "  - Tag $MAJOR_VERSION (updated)"
@@ -139,7 +139,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
   exit 1
 fi
 
-git push origin main
+git push origin master
 git push origin $VERSION
 git push origin $MINOR_VERSION --force
 git push origin $MAJOR_VERSION --force
