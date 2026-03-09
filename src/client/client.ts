@@ -1,7 +1,9 @@
 import * as core from '@actions/core'
 import { APP_URL, API_URL, MAX_WAIT_TIME, POLL_INTERVAL } from './constants.js'
 import {
+  BatchStartConfig,
   Config,
+  DetailedTestRunResponse,
   IClient,
   StartConfig,
   TestRunResult,
@@ -10,15 +12,12 @@ import {
   WaitConfig
 } from './entity.js'
 
-// Helper function for delays
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms))
 
-// Helper function for timestamps
 const timestamp = () =>
   new Date().toISOString().replace('T', ' ').substring(0, 19)
 
-// Helper function to make fetch requests with retry logic
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
@@ -32,21 +31,15 @@ async function fetchWithRetry(
       core.debug(
         `[${timestamp()}][fetch] Attempt ${attempt}/${maxRetries} for ${url}`
       )
-
-      const response = await fetch(url, options)
-
-      // If we get a response (even if it's an error status), return it
-      // We'll handle the status code in the calling function
-      return response
+      return await fetch(url, options)
     } catch (error) {
       lastError = error as Error
       core.debug(
         `[${timestamp()}][fetch] Attempt ${attempt} failed: ${lastError.message}`
       )
 
-      // Don't retry on the last attempt
       if (attempt < maxRetries) {
-        const waitTime = retryDelay * Math.pow(2, attempt - 1) // Exponential backoff
+        const waitTime = retryDelay * Math.pow(2, attempt - 1)
         core.debug(
           `[${timestamp()}][fetch] Waiting ${waitTime}ms before retry...`
         )
@@ -70,34 +63,21 @@ export class Client implements IClient {
       throw new Error('API token is required')
     }
 
-    // Validate token format
     const trimmedToken = this.config.apiToken.trim()
     if (trimmedToken.length < 10) {
       throw new Error('API token appears to be invalid (too short)')
     }
 
-    // Update config with trimmed token
     this.config.apiToken = trimmedToken
   }
 
-  async start(config: StartConfig) {
-    const { testSuiteID: testSuiteId, environmentID, environmentURL } = config
-    if (!testSuiteId) {
-      throw new Error('Test suite id is required')
-    }
-
-    const url = `${API_URL}/v1/test-run/test-suite/${testSuiteId}`
-    const body = {
-      environment: {
-        id: environmentID,
-        url: environmentURL
-      },
-      testContext: {},
-      trigger: this.config.trigger
-    }
-
+  private async requestStart(
+    url: string,
+    body: Record<string, unknown>,
+    errorContext: string
+  ): Promise<{ name: string; url: string; runID: number }> {
     core.debug(
-      '[client.start] request: ' +
+      '[client.requestStart] request: ' +
         JSON.stringify(
           {
             method: 'POST',
@@ -113,94 +93,149 @@ export class Client implements IClient {
         )
     )
 
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.config.apiToken}`
+      },
+      body: JSON.stringify(body)
+    })
+
+    if (response.status === 401) {
+      throw new Error('Authentication failed: Invalid API token or token expired')
+    }
+
+    if (response.status === 403) {
+      throw new Error(
+        'Authorization failed: Token does not have permission to access this resource'
+      )
+    }
+
+    if (response.status === 404) {
+      throw new Error(`${errorContext} not found`)
+    }
+
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later')
+    }
+
+    if (response.status >= 500) {
+      throw new Error(
+        `Server error (${response.status}): The Shiplight API is experiencing issues`
+      )
+    }
+
+    let data: TestStartResponse
     try {
-      const response = await fetchWithRetry(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.config.apiToken}`
+      const text = await response.text()
+      if (!text) {
+        throw new Error('Empty response body')
+      }
+      data = JSON.parse(text) as TestStartResponse
+    } catch (parseError) {
+      core.debug(
+        `[${timestamp()}][client.requestStart] Failed to parse response: ${parseError}`
+      )
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      throw new Error('Invalid JSON response from API')
+    }
+
+    core.debug(
+      `[${timestamp()}][client.requestStart] response: ` +
+        JSON.stringify(data, null, 2)
+    )
+
+    if (data?.success === false) {
+      throw new Error(data?.message || 'API request failed')
+    }
+
+    if (!data?.id || !data?.target) {
+      throw new Error('Invalid response: missing required fields (id or target)')
+    }
+
+    return {
+      name: data.target,
+      url: `${APP_URL}/run-results/${data.id}`,
+      runID: data.id
+    }
+  }
+
+  async start(config: StartConfig) {
+    const { testSuiteID: testSuiteId, environmentID, environmentURL } = config
+    if (!testSuiteId) {
+      throw new Error('Test suite id is required')
+    }
+
+    try {
+      return await this.requestStart(
+        `${API_URL}/v1/test-run/test-suite/${testSuiteId}`,
+        {
+          environment: {
+            id: environmentID,
+            url: environmentURL
+          },
+          testContext: {},
+          trigger: this.config.trigger
         },
-        body: JSON.stringify(body)
-      })
-
-      // Check HTTP status
-      if (response.status === 401) {
-        throw new Error(
-          'Authentication failed: Invalid API token or token expired'
-        )
-      }
-
-      if (response.status === 403) {
-        throw new Error(
-          'Authorization failed: Token does not have permission to access this resource'
-        )
-      }
-
-      if (response.status === 404) {
-        throw new Error(`Test suite not found: ${testSuiteId}`)
-      }
-
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later')
-      }
-
-      if (response.status >= 500) {
-        throw new Error(
-          `Server error (${response.status}): The Shiplight API is experiencing issues`
-        )
-      }
-
-      // Try to parse JSON response
-      let data: TestStartResponse
-      try {
-        const text = await response.text()
-        if (!text) {
-          throw new Error('Empty response body')
-        }
-        data = JSON.parse(text)
-      } catch (parseError) {
-        core.debug(
-          `[${timestamp()}][client.start] Failed to parse response: ${parseError}`
-        )
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-        throw new Error('Invalid JSON response from API')
-      }
-
-      core.debug(
-        `[${timestamp()}][client.start] response: ` +
-          JSON.stringify(data, null, 2)
+        `Test suite ${testSuiteId}`
       )
-
-      // Check for API-level errors
-      if (data?.success === false) {
-        throw new Error(data?.message || 'API request failed')
-      }
-
-      // Validate required fields
-      if (!data?.id || !data?.target) {
-        throw new Error(
-          'Invalid response: missing required fields (id or target)'
-        )
-      }
-
-      return {
-        name: data.target,
-        url: `${APP_URL}/run-results/${data.id}`,
-        runID: data.id
-      }
     } catch (error) {
-      // Log the full error for debugging
-      core.debug(
-        `[${timestamp()}][client.start] Error details: ${JSON.stringify(error)}`
-      )
-
-      // Re-throw with more context
+      core.debug(`[${timestamp()}][client.start] Error details: ${JSON.stringify(error)}`)
       if (error instanceof Error) {
-        throw new Error(
-          `Failed to start test suite ${testSuiteId}: ${error.message}`
-        )
+        throw new Error(`Failed to start test suite ${testSuiteId}: ${error.message}`)
+      }
+      throw error
+    }
+  }
+
+  async startBatch(config: BatchStartConfig) {
+    const {
+      testSuiteIDs,
+      environmentID,
+      environmentURL,
+      preflightTestCaseID,
+      metadata
+    } = config
+
+    if (!testSuiteIDs || testSuiteIDs.length === 0) {
+      throw new Error('At least one test suite id is required')
+    }
+
+    const body: Record<string, unknown> = {
+      test_suite_ids: testSuiteIDs,
+      environment: {
+        id: environmentID,
+        url: environmentURL
+      },
+      testContext: {},
+      trigger: this.config.trigger
+    }
+
+    if (metadata && Object.keys(metadata).length > 0) {
+      body.metadata = metadata
+    }
+
+    if (preflightTestCaseID !== undefined) {
+      body.preflight = {
+        testCaseId: preflightTestCaseID
+      }
+    }
+
+    try {
+      return await this.requestStart(
+        `${API_URL}/v1/test-run`,
+        body,
+        'Batch test run'
+      )
+    } catch (error) {
+      core.debug(
+        `[${timestamp()}][client.startBatch] Error details: ${JSON.stringify(error)}`
+      )
+      if (error instanceof Error) {
+        throw new Error(`Failed to start batch test run: ${error.message}`)
       }
       throw error
     }
@@ -219,7 +254,7 @@ export class Client implements IClient {
       if (Date.now() - startTime > timeout) {
         return {
           result: 'Timeout' as TestRunResult
-        } as any
+        } as const
       }
 
       core.debug(
@@ -250,13 +285,10 @@ export class Client implements IClient {
           },
           2,
           2000
-        ) // Fewer retries for polling, shorter initial delay
+        )
 
-        // Check HTTP status
         if (response.status === 401) {
-          throw new Error(
-            'Authentication failed: Invalid API token or token expired'
-          )
+          throw new Error('Authentication failed: Invalid API token or token expired')
         }
 
         if (response.status === 403) {
@@ -270,31 +302,24 @@ export class Client implements IClient {
         }
 
         if (response.status === 429) {
-          // For rate limiting during polling, wait longer before next attempt
-          core.debug(
-            `[${timestamp()}][client.wait] Rate limited, waiting 30 seconds...`
-          )
+          core.debug(`[${timestamp()}][client.wait] Rate limited, waiting 30 seconds...`)
           await delay(30000)
           continue
         }
 
         if (response.status >= 500) {
-          // For server errors during polling, log but continue
-          core.warning(
-            `Server error (${response.status}) while polling, will retry...`
-          )
+          core.warning(`Server error (${response.status}) while polling, will retry...`)
           await delay(POLL_INTERVAL * 2)
           continue
         }
 
-        // Try to parse JSON response
         let data: TestWaitResponse
         try {
           const text = await response.text()
           if (!text) {
             throw new Error('Empty response body')
           }
-          data = JSON.parse(text)
+          data = JSON.parse(text) as TestWaitResponse
         } catch (parseError) {
           core.debug(
             `[${timestamp()}][client.wait] Failed to parse response: ${parseError}`
@@ -306,30 +331,24 @@ export class Client implements IClient {
         }
 
         core.debug(
-          `[${timestamp()}][client.wait] response: ` +
-            JSON.stringify(data, null, 2)
+          `[${timestamp()}][client.wait] response: ` + JSON.stringify(data, null, 2)
         )
 
-        // Check for API-level errors
         if (data?.success === false) {
           throw new Error(data?.message || 'API request failed')
         }
 
-        // Check if test run is finished
         if (data?.testRun?.status === 'Finished') {
           return data.testRun
         }
 
-        // Log current status
         if (data?.testRun?.status) {
           core.debug(
             `[${timestamp()}][client.wait] Test run status: ${data.testRun.status}`
           )
         }
       } catch (error) {
-        // For polling, we want to be more resilient to transient errors
         if (error instanceof Error) {
-          // These are fatal errors that should stop polling
           if (
             error.message.includes('Authentication failed') ||
             error.message.includes('Authorization failed') ||
@@ -338,7 +357,6 @@ export class Client implements IClient {
             throw error
           }
 
-          // Log other errors but continue polling
           core.warning(`Error while polling (will continue): ${error.message}`)
         }
       }
@@ -347,7 +365,7 @@ export class Client implements IClient {
     }
   }
 
-  async getDetailedResults(testRunID: number) {
+  async getDetailedResults(testRunID: number): Promise<DetailedTestRunResponse> {
     if (!testRunID) {
       throw new Error('Test run ID is required')
     }
@@ -364,9 +382,7 @@ export class Client implements IClient {
       })
 
       if (response.status === 401) {
-        throw new Error(
-          'Authentication failed: Invalid API token or token expired'
-        )
+        throw new Error('Authentication failed: Invalid API token or token expired')
       }
 
       if (response.status === 404) {
@@ -377,7 +393,7 @@ export class Client implements IClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const data: any = await response.json()
+      const data = (await response.json()) as DetailedTestRunResponse
 
       if (data?.success === false) {
         throw new Error(data?.message || 'API request failed')

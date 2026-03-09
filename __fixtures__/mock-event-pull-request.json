@@ -1,0 +1,10 @@
+{
+  "pull_request": {
+    "number": 1,
+    "title": "feat: improve checkout flow"
+  },
+  "head_commit": {
+    "id": "96cd365d0fc7db2574121ce94195dfb2b032c393",
+    "message": "fix: stabilize login step\n\nretry selector with timeout"
+  }
+}
