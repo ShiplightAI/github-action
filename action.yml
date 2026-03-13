@@ -12,8 +12,7 @@ inputs:
     required: true
   test-suite-id:
     description:
-      test suite ID (single ID or comma-separated list, e.g., "1" or
-      "1,2,3")
+      test suite ID (single ID or comma-separated list, e.g., "1" or "1,2,3")
     required: true
   preflight-test-case-id:
     description:

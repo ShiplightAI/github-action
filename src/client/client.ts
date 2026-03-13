@@ -103,7 +103,9 @@ export class Client implements IClient {
     })
 
     if (response.status === 401) {
-      throw new Error('Authentication failed: Invalid API token or token expired')
+      throw new Error(
+        'Authentication failed: Invalid API token or token expired'
+      )
     }
 
     if (response.status === 403) {
@@ -153,7 +155,9 @@ export class Client implements IClient {
     }
 
     if (!data?.id || !data?.target) {
-      throw new Error('Invalid response: missing required fields (id or target)')
+      throw new Error(
+        'Invalid response: missing required fields (id or target)'
+      )
     }
 
     return {
@@ -183,9 +187,13 @@ export class Client implements IClient {
         `Test suite ${testSuiteId}`
       )
     } catch (error) {
-      core.debug(`[${timestamp()}][client.start] Error details: ${JSON.stringify(error)}`)
+      core.debug(
+        `[${timestamp()}][client.start] Error details: ${JSON.stringify(error)}`
+      )
       if (error instanceof Error) {
-        throw new Error(`Failed to start test suite ${testSuiteId}: ${error.message}`)
+        throw new Error(
+          `Failed to start test suite ${testSuiteId}: ${error.message}`
+        )
       }
       throw error
     }
@@ -289,7 +297,9 @@ export class Client implements IClient {
         )
 
         if (response.status === 401) {
-          throw new Error('Authentication failed: Invalid API token or token expired')
+          throw new Error(
+            'Authentication failed: Invalid API token or token expired'
+          )
         }
 
         if (response.status === 403) {
@@ -303,13 +313,17 @@ export class Client implements IClient {
         }
 
         if (response.status === 429) {
-          core.debug(`[${timestamp()}][client.wait] Rate limited, waiting 30 seconds...`)
+          core.debug(
+            `[${timestamp()}][client.wait] Rate limited, waiting 30 seconds...`
+          )
           await delay(30000)
           continue
         }
 
         if (response.status >= 500) {
-          core.warning(`Server error (${response.status}) while polling, will retry...`)
+          core.warning(
+            `Server error (${response.status}) while polling, will retry...`
+          )
           await delay(POLL_INTERVAL * 2)
           continue
         }
@@ -332,7 +346,8 @@ export class Client implements IClient {
         }
 
         core.debug(
-          `[${timestamp()}][client.wait] response: ` + JSON.stringify(data, null, 2)
+          `[${timestamp()}][client.wait] response: ` +
+            JSON.stringify(data, null, 2)
         )
 
         if (data?.success === false) {
@@ -366,7 +381,9 @@ export class Client implements IClient {
     }
   }
 
-  async getDetailedResults(testRunID: number): Promise<DetailedTestRunResponse> {
+  async getDetailedResults(
+    testRunID: number
+  ): Promise<DetailedTestRunResponse> {
     if (!testRunID) {
       throw new Error('Test run ID is required')
     }
@@ -383,7 +400,9 @@ export class Client implements IClient {
       })
 
       if (response.status === 401) {
-        throw new Error('Authentication failed: Invalid API token or token expired')
+        throw new Error(
+          'Authentication failed: Invalid API token or token expired'
+        )
       }
 
       if (response.status === 404) {
