@@ -197,7 +197,8 @@ export class Client implements IClient {
       environmentID,
       environmentURL,
       preflightTestCaseID,
-      metadata
+      metadata,
+      testContext
     } = config
 
     if (!testSuiteIDs || testSuiteIDs.length === 0) {
@@ -210,7 +211,7 @@ export class Client implements IClient {
         id: environmentID,
         url: environmentURL
       },
-      testContext: {},
+      testContext: testContext ?? {},
       trigger: this.config.trigger
     }
 

@@ -37,7 +37,9 @@ const parseTestSuiteIDs = (raw: string): number[] => {
   return parts.map((id) => normalizeToNumber(id, 'test-suite-id'))
 }
 
-const buildGithubMetadata = (commitSHAInput: string): Record<string, unknown> => {
+const buildGithubMetadata = (
+  commitSHAInput: string
+): Record<string, unknown> => {
   const pullRequest = context.payload.pull_request
   const commitSHA = commitSHAInput || process.env.GITHUB_SHA || context.sha
   const headCommitMessage = context.payload.head_commit?.message
@@ -76,9 +78,13 @@ const derivePreflightResult = (
   }
 
   const preflightResult =
-    testCaseResults?.find((item) => item.id === run.preflightTestCaseResultId) ||
     testCaseResults?.find(
-      (item) => item.type?.toLowerCase() === 'preflight' || item.testCaseId === run.preflightTestCaseId
+      (item) => item.id === run.preflightTestCaseResultId
+    ) ||
+    testCaseResults?.find(
+      (item) =>
+        item.type?.toLowerCase() === 'preflight' ||
+        item.testCaseId === run.preflightTestCaseId
     )
 
   if (!preflightResult?.result) {
@@ -147,7 +153,10 @@ export async function run(): Promise<void> {
     const asyncMode: boolean = core.getInput('async') === 'true'
     const commitSHAInput: string = core.getInput('commit-sha')
     const timeoutSecondsInput: string = core.getInput('timeout-seconds')
-    const preflightTestCaseIdInput: string = core.getInput('preflight-test-case-id')
+    const preflightTestCaseIdInput: string = core.getInput(
+      'preflight-test-case-id'
+    )
+    const testContextInput: string = core.getInput('test-context')
 
     const timeoutSeconds: number = timeoutSecondsInput
       ? parseInt(timeoutSecondsInput, 10)
@@ -172,6 +181,27 @@ export async function run(): Promise<void> {
       ? normalizeToNumber(preflightTestCaseIdInput, 'preflight-test-case-id')
       : undefined
 
+    let testContext: Record<string, unknown> | undefined
+    if (testContextInput) {
+      testContext = {}
+      for (const line of testContextInput.split(/\n|\\n/)) {
+        const trimmed = line.trim()
+        if (!trimmed) continue
+        const eqIndex = trimmed.indexOf('=')
+        if (eqIndex === -1) {
+          throw new Error(
+            `test-context line must be in KEY=VALUE format, got: "${trimmed}"`
+          )
+        }
+        const key = trimmed.substring(0, eqIndex).trim()
+        const value = trimmed.substring(eqIndex + 1)
+        testContext[key] = value
+      }
+      if (Object.keys(testContext).length === 0) {
+        testContext = undefined
+      }
+    }
+
     const metadata = buildGithubMetadata(commitSHAInput)
     const commitSHA =
       commitSHAInput || (typeof metadata.sha === 'string' ? metadata.sha : '')
@@ -185,6 +215,7 @@ export async function run(): Promise<void> {
     core.info(`async: ${asyncMode}`)
     core.info(`timeoutSeconds: ${timeoutSeconds}`)
     core.info(`preflightTestCaseID: ${preflightTestCaseID ?? 'none'}`)
+    core.info(`testContext: ${JSON.stringify(testContext)}`)
 
     const client = new Client({
       apiToken: trimmedApiToken,
@@ -199,7 +230,8 @@ export async function run(): Promise<void> {
       environmentID: environmentIDNumber,
       environmentURL,
       preflightTestCaseID,
-      metadata
+      metadata,
+      testContext
     })
 
     core.setOutput('run-id', startedRun.runID)
@@ -251,7 +283,8 @@ export async function run(): Promise<void> {
     let lastCommentSignature = buildCommentStateSignature({
       runStatus: 'Pending',
       runResult: 'Pending',
-      preflightResult: preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
+      preflightResult:
+        preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
       suites: initialCommentSuites.map((suite) => ({
         testSuiteID: suite.testSuiteID,
         status: suite.testSuiteRun.status,
@@ -269,7 +302,8 @@ export async function run(): Promise<void> {
         await github.comment({
           identifier: runIdentifier,
           commitSHA,
-          preflightResult: preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
+          preflightResult:
+            preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
           preflightTestCaseId: preflightTestCaseID,
           testSuites: initialCommentSuites
         })
@@ -280,14 +314,19 @@ export async function run(): Promise<void> {
       }
     }
 
-    core.info(`[${timestamp()}][shiplight] polling test run and updating comment on state changes ...`)
+    core.info(
+      `[${timestamp()}][shiplight] polling test run and updating comment on state changes ...`
+    )
     const pollingStartTime = Date.now()
     let lastDetailedRun = await client.getDetailedResults(startedRun.runID)
 
     while (true) {
       if (Date.now() - pollingStartTime > timeout) {
         core.setOutput('success', false)
-        core.setOutput('preflight-result', preflightTestCaseID ? 'Pending' : 'Skipped')
+        core.setOutput(
+          'preflight-result',
+          preflightTestCaseID ? 'Pending' : 'Skipped'
+        )
         core.setOutput(
           'results',
           JSON.stringify(
@@ -389,7 +428,9 @@ export async function run(): Promise<void> {
       }
 
       if (testRun.status === 'Finished') {
-        const failedResults = finalResults.filter((result) => result.result === 'Failed')
+        const failedResults = finalResults.filter(
+          (result) => result.result === 'Failed'
+        )
         const allSuccessful = failedResults.length === 0
 
         core.setOutput('success', allSuccessful)

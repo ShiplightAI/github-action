@@ -108,6 +108,7 @@ export interface BatchStartConfig {
   environmentURL?: string
   preflightTestCaseID?: number
   metadata?: Record<string, unknown>
+  testContext?: Record<string, unknown>
 }
 
 export interface WaitConfig {
