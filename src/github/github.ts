@@ -1,9 +1,9 @@
 import * as core from '@actions/core'
 import { context, getOctokit } from '@actions/github'
-import { TestRun, TestCaseResult } from '../client/entity.js'
+import { TestRun, TestCaseResult, TestRunResult } from '../client/entity.js'
 import { APP_URL } from '../client/constants.js'
 
-const resultEmoji = {
+const resultEmoji: Record<string, string> = {
   Pending: '🔄',
   Passed: '✅',
   Failed: '❌',
@@ -17,6 +17,8 @@ export interface Config {
 export interface CommentConfig {
   identifier: string
   commitSHA: string
+  preflightResult?: TestRunResult | 'Skipped' | 'Pending'
+  preflightTestCaseId?: number
   testSuites: Array<{
     testSuiteID: string
     testSuiteName: string
@@ -25,19 +27,14 @@ export interface CommentConfig {
   }>
 }
 
-/**
- * Extract failure summary from test case report when summary is null
- */
 function extractFailureSummary(testCase: TestCaseResult): string {
   if (testCase.summary) {
     return testCase.summary
   }
 
-  // Try to extract from report
   if (testCase.report && testCase.report.length > 0) {
     const report = testCase.report[0]
     if (report.resultJson) {
-      // Find the first failed step
       for (const [stepKey, stepData] of Object.entries(report.resultJson)) {
         if (stepData.status === 'failure' && stepData.message) {
           const stepDesc = stepData.description || stepKey
@@ -58,53 +55,43 @@ export class Github {
   }
 
   async comment(config: CommentConfig) {
-    // core.info(`config: ${JSON.stringify(config)}`)
-
     let issue_number = context.payload.pull_request?.number
-    if (!issue_number) {
-      if (config.commitSHA) {
-        const { data: pull_requests } =
-          await this.core.rest.repos.listPullRequestsAssociatedWithCommit({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            commit_sha: config.commitSHA
-          })
+    if (!issue_number && config.commitSHA) {
+      const { data: pull_requests } =
+        await this.core.rest.repos.listPullRequestsAssociatedWithCommit({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          commit_sha: config.commitSHA
+        })
 
-        // core.info(`pull_requests: ${JSON.stringify(pull_requests)}`)
-
-        // Filter for open pull requests
-        const openPRs = pull_requests.filter((pr) => pr.state === 'open')
-        if (openPRs.length > 0) {
-          issue_number = openPRs[0].number
-        }
+      const openPRs = pull_requests.filter((pr) => pr.state === 'open')
+      if (openPRs.length > 0) {
+        issue_number = openPRs[0].number
       }
     }
 
     core.info(`issue_number: ${issue_number}`)
 
-    // ignore if the pull request is not a PR
     if (!issue_number) {
       return
     }
 
     const commentIdentifier = `<!-- shiplight_tests ${config.identifier} -->`
+    const firstRunId = config.testSuites.find((suite) => suite.testSuiteRun?.id)
+      ?.testSuiteRun?.id
 
-    // Generate table rows for all test suites
     const tableRows = config.testSuites
       .map((suite) => {
         const testSuiteURL = `${APP_URL}/test-suites/${suite.testSuiteID}`
         const runId = suite.testSuiteRun?.id
-        // Simple check: runId exists and is not 0 or empty
         const hasValidRunId = runId && runId !== 0 && String(runId) !== ''
 
-        // Log for debugging
         core.debug(
           `Suite: ${suite.testSuiteName}, runId: ${runId} (type: ${typeof runId}), hasValidRunId: ${hasValidRunId}`
         )
 
         const name = `[${suite.testSuiteName}](${testSuiteURL})`
 
-        // Build result column with pass/fail counts
         const passedCount = suite.testSuiteRun?.passedTestCaseCount || 0
         const totalCount = suite.testSuiteRun?.totalTestCaseCount || 0
 
@@ -113,11 +100,10 @@ export class Github {
           const testSuiteRunResultURL = `${APP_URL}/run-results/${runId}`
           const counts =
             totalCount > 0 ? ` (${passedCount}/${totalCount} passed)` : ''
-          result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result}${counts} [Inspect](${testSuiteRunResultURL})`
+          result = `${resultEmoji[suite.testSuiteRun?.result] || ''} ${suite.testSuiteRun?.result}${counts} [Inspect](${testSuiteRunResultURL})`
         } else {
-          // For cases without valid run IDs, don't show inspect link
           const resultText = suite.testSuiteRun?.result || 'Failed'
-          result = `${resultEmoji[resultText]} ${resultText}`
+          result = `${resultEmoji[resultText] || ''} ${resultText}`
         }
 
         const startTime = suite.testSuiteRun?.startTime
@@ -135,7 +121,6 @@ export class Github {
       })
       .join('\n')
 
-    // Generate failure details section (after the table)
     const failureSections = config.testSuites
       .filter((suite) => {
         const failedCount = suite.testSuiteRun?.failedTestCaseCount || 0
@@ -169,12 +154,28 @@ ${failureList}
       .filter(Boolean)
       .join('\n\n')
 
+    const hasPreflight =
+      typeof config.preflightTestCaseId === 'number' &&
+      Number.isFinite(config.preflightTestCaseId) &&
+      config.preflightTestCaseId > 0
+
+    const preflightSection = hasPreflight
+      ? `\n## Preflight Gate\n\n- Test Case: ${
+          firstRunId
+            ? `[#${config.preflightTestCaseId}](${APP_URL}/run-results/${firstRunId}/test/${config.preflightTestCaseId}/overview)`
+            : `#${config.preflightTestCaseId}`
+        }\n- Result: ${resultEmoji[config.preflightResult || 'Pending'] || 'ℹ️'} ${config.preflightResult || 'Pending'}\n`
+      : ''
+
     const failureSection = failureSections
       ? `\n## ❌ Failed Tests\n\n${failureSections}\n`
       : ''
 
     const body = `${commentIdentifier}
 # [Shiplight](https://app.shiplight.ai) Runner
+
+${preflightSection}
+## Test Suites
 
 | Name | Result | Start Time (UTC) | End Time (UTC) |
 | :--- | :----- | :------ | :------ |
@@ -184,7 +185,6 @@ ${failureSection}
 _This comment was automatically generated by [Shiplight GitHub Action](https://github.com/marketplace/actions/shiplight-runner)_
 `
 
-    // check if the comment already exists
     const comments = await this.core.rest.issues.listComments({
       owner: context.repo.owner,
       repo: context.repo.repo,
@@ -194,7 +194,6 @@ _This comment was automatically generated by [Shiplight GitHub Action](https://g
       comment.body?.startsWith(commentIdentifier)
     )
     if (commit?.id) {
-      // update the comment
       await this.core.rest.issues.updateComment({
         owner: context.repo.owner,
         repo: context.repo.repo,
@@ -202,7 +201,6 @@ _This comment was automatically generated by [Shiplight GitHub Action](https://g
         body
       })
     } else {
-      // create a new comment
       await this.core.rest.issues.createComment({
         owner: context.repo.owner,
         repo: context.repo.repo,

@@ -1,56 +1,168 @@
 import * as core from '@actions/core'
+import { context } from '@actions/github'
 import { Client } from './client/index.js'
+import {
+  TestCaseResult,
+  TestRun,
+  TestRunResult,
+  TestSuiteResult
+} from './client/entity.js'
 import { Github } from './github/github.js'
-import { MAX_WAIT_TIME } from './client/constants.js'
+import { MAX_WAIT_TIME, POLL_INTERVAL } from './client/constants.js'
 
-/**
- * The main function for the action.
- *
- * @returns Resolves when the action is complete.
- */
+const timestamp = () =>
+  new Date().toISOString().replace('T', ' ').substring(0, 19)
+
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
+
+const normalizeToNumber = (value: string, fieldName: string): number => {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${fieldName} must be a number, got: ${value}`)
+  }
+  return parsed
+}
+
+const parseTestSuiteIDs = (raw: string): number[] => {
+  const parts = raw
+    .split(',')
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0)
+
+  if (parts.length === 0) {
+    throw new Error('At least one test suite ID is required')
+  }
+
+  return parts.map((id) => normalizeToNumber(id, 'test-suite-id'))
+}
+
+const buildGithubMetadata = (
+  commitSHAInput: string
+): Record<string, unknown> => {
+  const pullRequest = context.payload.pull_request
+  const commitSHA = commitSHAInput || process.env.GITHUB_SHA || context.sha
+  const headCommitMessage = context.payload.head_commit?.message
+  const normalizedCommitMessage =
+    typeof headCommitMessage === 'string' && headCommitMessage.trim().length > 0
+      ? headCommitMessage.trim()
+      : undefined
+  const commitTitle = normalizedCommitMessage?.split('\n')[0]
+
+  return {
+    source: 'github_action',
+    repository: process.env.GITHUB_REPOSITORY,
+    workflow: process.env.GITHUB_WORKFLOW,
+    workflowRunId: process.env.GITHUB_RUN_ID,
+    workflowRunNumber: process.env.GITHUB_RUN_NUMBER,
+    job: process.env.GITHUB_JOB,
+    actor: process.env.GITHUB_ACTOR,
+    eventName: process.env.GITHUB_EVENT_NAME,
+    ref: process.env.GITHUB_REF,
+    sha: commitSHA,
+    pullRequestId: pullRequest?.number ? String(pullRequest.number) : undefined,
+    pullRequestTitle: pullRequest?.title,
+    pullRequestUrl: pullRequest?.html_url,
+    commitName: commitTitle,
+    commitTitle,
+    commitMessage: normalizedCommitMessage
+  }
+}
+
+const derivePreflightResult = (
+  run: TestRun,
+  testCaseResults: TestCaseResult[] | undefined
+): TestRunResult | 'Skipped' | 'Pending' => {
+  if (!run.preflightTestCaseId) {
+    return 'Skipped'
+  }
+
+  const preflightResult =
+    testCaseResults?.find(
+      (item) => item.id === run.preflightTestCaseResultId
+    ) ||
+    testCaseResults?.find(
+      (item) =>
+        item.type?.toLowerCase() === 'preflight' ||
+        item.testCaseId === run.preflightTestCaseId
+    )
+
+  if (!preflightResult?.result) {
+    return 'Pending'
+  }
+
+  return preflightResult.result
+}
+
+const toCommentSuiteRun = (
+  runId: number,
+  suiteResult: TestSuiteResult | undefined,
+  fallbackRun: TestRun,
+  forceResult?: TestRunResult
+): TestRun => {
+  const result = forceResult || suiteResult?.result || fallbackRun.result
+
+  return {
+    id: runId,
+    status: suiteResult?.status || fallbackRun.status,
+    result,
+    duration: suiteResult?.duration || '',
+    failedTestCaseCount: suiteResult?.failedTestCaseCount ?? 0,
+    passedTestCaseCount: suiteResult?.passedTestCaseCount ?? 0,
+    totalTestCaseCount: suiteResult?.totalTestCaseCount ?? 0,
+    createdAt: fallbackRun.createdAt,
+    startTime: suiteResult?.startTime,
+    endTime: suiteResult?.endTime,
+    preflightTestCaseId: fallbackRun.preflightTestCaseId,
+    preflightTestCaseResultId: fallbackRun.preflightTestCaseResultId
+  }
+}
+
+const buildCommentStateSignature = (params: {
+  runStatus: string | undefined
+  runResult: string | undefined
+  preflightResult: string
+  suites: Array<{
+    testSuiteID: string
+    status?: string
+    result?: string
+    startTime?: string
+    endTime?: string
+    failedCount?: number
+    passedCount?: number
+    totalCount?: number
+  }>
+}): string =>
+  JSON.stringify({
+    runStatus: params.runStatus || '',
+    runResult: params.runResult || '',
+    preflightResult: params.preflightResult,
+    suites: params.suites
+  })
+
 export async function run(): Promise<void> {
   try {
-    // process.env['INPUT_API-TOKEN'] = process.env.API_TOKEN || ''
-    // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
-    // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
-
-    // S1. prepare
-    const timestamp = () =>
-      new Date().toISOString().replace('T', ' ').substring(0, 19)
     core.info(`[${timestamp()}][shiplight] prepare ...`)
+
     const apiToken: string = core.getInput('api-token')
     const testSuiteIDInput: string = core.getInput('test-suite-id')
     const environmentID: string = core.getInput('environment-id')
     const environmentURL: string = core.getInput('environment-url')
     const githubComment: boolean = core.getInput('github-comment') === 'true'
     const githubToken: string = core.getInput('github-token')
-    const async: boolean = core.getInput('async') === 'true'
-    const commitSHA: string = core.getInput('commit-sha')
+    const asyncMode: boolean = core.getInput('async') === 'true'
+    const commitSHAInput: string = core.getInput('commit-sha')
     const timeoutSecondsInput: string = core.getInput('timeout-seconds')
+    const preflightTestCaseIdInput: string = core.getInput(
+      'preflight-test-case-id'
+    )
+    const testContextInput: string = core.getInput('test-context')
+
     const timeoutSeconds: number = timeoutSecondsInput
       ? parseInt(timeoutSecondsInput, 10)
       : MAX_WAIT_TIME / 1000
     const timeout: number = timeoutSeconds * 1000
 
-    // Generate unique identifier based on environment and test suites
-    const environmentIDSafe = environmentID || 'default-env'
-    const testSuiteIDSafe = testSuiteIDInput
-      .replace(/[^a-zA-Z0-9,-]/g, '')
-      .replace(/,/g, '_')
-    const runIdentifier = `${environmentIDSafe}-${testSuiteIDSafe}`
-
-    // Parse test suite IDs (supports single ID or comma-separated list for backward compatibility)
-    const testSuiteIDs = testSuiteIDInput
-      .split(',')
-      .map((id) => id.trim())
-      .filter((id) => id.length > 0)
-
-    let environmentIDNumber: number | undefined = undefined
-    if (!isNaN(+environmentID)) {
-      environmentIDNumber = +environmentID
-    }
-
-    // Validate API token
     const trimmedApiToken = apiToken.trim()
     if (!trimmedApiToken) {
       throw new Error('API token is required but was not provided')
@@ -59,267 +171,307 @@ export async function run(): Promise<void> {
       throw new Error('API token appears to be invalid (too short)')
     }
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(
-      `apiToken: ${trimmedApiToken.substring(0, 8)}...${trimmedApiToken.length > 8 ? '***' : ''}`
-    )
-    core.info(`apiToken: ${trimmedApiToken ? '***' : 'not provided'}`)
+    const testSuiteIDs = parseTestSuiteIDs(testSuiteIDInput)
+
+    const environmentIDNumber = environmentID
+      ? normalizeToNumber(environmentID, 'environment-id')
+      : undefined
+
+    const preflightTestCaseID = preflightTestCaseIdInput
+      ? normalizeToNumber(preflightTestCaseIdInput, 'preflight-test-case-id')
+      : undefined
+
+    let testContext: Record<string, unknown> | undefined
+    if (testContextInput) {
+      testContext = {}
+      for (const line of testContextInput.split(/\n|\\n/)) {
+        const trimmed = line.trim()
+        if (!trimmed) continue
+        const eqIndex = trimmed.indexOf('=')
+        if (eqIndex === -1) {
+          throw new Error(
+            `test-context line must be in KEY=VALUE format, got: "${trimmed}"`
+          )
+        }
+        const key = trimmed.substring(0, eqIndex).trim()
+        const value = trimmed.substring(eqIndex + 1)
+        testContext[key] = value
+      }
+      if (Object.keys(testContext).length === 0) {
+        testContext = undefined
+      }
+    }
+
+    const metadata = buildGithubMetadata(commitSHAInput)
+    const commitSHA =
+      commitSHAInput || (typeof metadata.sha === 'string' ? metadata.sha : '')
+
+    const environmentIDSafe = environmentID || 'default-env'
+    const runIdentifier = `${environmentIDSafe}-${testSuiteIDs.join('_')}`
+
     core.info(`testSuiteIds: ${JSON.stringify(testSuiteIDs)}`)
     core.info(`testSuiteEnvironmentURL: ${environmentURL}`)
     core.info(`githubComment: ${githubComment}`)
-    core.info(`githubToken: ${githubToken}`)
-    core.info(`async: ${async}`)
+    core.info(`async: ${asyncMode}`)
     core.info(`timeoutSeconds: ${timeoutSeconds}`)
-    core.info(`timeout: ${timeout}`)
-    core.info(`environmentID: ${environmentID} -> safe: ${environmentIDSafe}`)
-    core.info(
-      `testSuiteIDInput: ${testSuiteIDInput} -> safe: ${testSuiteIDSafe}`
-    )
-    core.info(
-      `runIdentifier: ${runIdentifier} (environmentID-testSuiteIDInput)`
-    )
+    core.info(`preflightTestCaseID: ${preflightTestCaseID ?? 'none'}`)
+    core.info(`testContext: ${JSON.stringify(testContext)}`)
 
-    if (testSuiteIDs.length === 0) {
-      throw new Error('At least one test suite ID is required')
-    }
-
-    // client
     const client = new Client({
       apiToken: trimmedApiToken,
       trigger: 'GITHUB_ACTION'
     })
-    // github
-    const github = new Github({
-      token: githubToken
+
+    const github = new Github({ token: githubToken })
+
+    core.info(`[${timestamp()}][shiplight] starting single test run ...`)
+    const startedRun = await client.startBatch({
+      testSuiteIDs,
+      environmentID: environmentIDNumber,
+      environmentURL,
+      preflightTestCaseID,
+      metadata,
+      testContext
     })
 
-    // S2. start all test runs in parallel
-    core.info(
-      `[${timestamp()}][shiplight] starting ${testSuiteIDs.length} test runs in parallel ...`
-    )
+    core.setOutput('run-id', startedRun.runID)
+    core.setOutput('run-url', startedRun.url)
+    core.setOutput('metadata', JSON.stringify(metadata))
 
-    const testRunPromises = testSuiteIDs.map(async (testSuiteID) => {
-      try {
-        const { name, url, runID } = await client.start({
-          testSuiteID,
-          environmentID: environmentIDNumber,
-          environmentURL
-        })
-        return {
-          testSuiteID,
-          name,
-          url,
-          runID,
-          error: null
-        }
-      } catch (error: any) {
-        core.warning(
-          `Failed to start test suite ${testSuiteID}: ${error.message}`
-        )
-        return {
-          testSuiteID,
-          name: `Test Suite ${testSuiteID}`,
-          url: '',
-          runID: 0,
-          error: error.message
-        }
-      }
-    })
-
-    const testRuns = await Promise.all(testRunPromises)
-
-    // S2.1 if async is true, return
-    if (async) {
+    if (asyncMode) {
       core.info(
-        `[${timestamp()}][shiplight] async mode is enabled, ignore wait for the test runs to finish and no comment on the pull request`
+        `[${timestamp()}][shiplight] async mode is enabled, skip waiting and commenting`
+      )
+      core.setOutput('success', true)
+      core.setOutput(
+        'results',
+        JSON.stringify(
+          testSuiteIDs.map((suiteID) => ({
+            testSuiteID: String(suiteID),
+            name: `Test Suite ${suiteID}`,
+            result: 'Pending',
+            url: startedRun.url,
+            error: null
+          }))
+        )
+      )
+      core.setOutput(
+        'preflight-result',
+        preflightTestCaseID !== undefined ? 'Pending' : 'Skipped'
       )
       return
     }
 
-    // S3. comment on the pull request with initial pending status
-    core.info(
-      `[${timestamp()}][shiplight] posting initial comment on the pull request ...`
-    )
+    const initialCommentSuites = testSuiteIDs.map((suiteID) => ({
+      testSuiteID: String(suiteID),
+      testSuiteName: `Test Suite ${suiteID}`,
+      testSuiteRun: toCommentSuiteRun(startedRun.runID, undefined, {
+        id: startedRun.runID,
+        status: 'Pending',
+        result: 'Pending',
+        duration: '',
+        failedTestCaseCount: 0,
+        passedTestCaseCount: 0,
+        totalTestCaseCount: 0,
+        createdAt: new Date().toISOString(),
+        startTime: undefined,
+        endTime: undefined,
+        preflightTestCaseId: preflightTestCaseID,
+        preflightTestCaseResultId: undefined
+      })
+    }))
+    let lastCommentSignature = buildCommentStateSignature({
+      runStatus: 'Pending',
+      runResult: 'Pending',
+      preflightResult:
+        preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
+      suites: initialCommentSuites.map((suite) => ({
+        testSuiteID: suite.testSuiteID,
+        status: suite.testSuiteRun.status,
+        result: suite.testSuiteRun.result,
+        startTime: suite.testSuiteRun.startTime,
+        endTime: suite.testSuiteRun.endTime,
+        failedCount: suite.testSuiteRun.failedTestCaseCount,
+        passedCount: suite.testSuiteRun.passedTestCaseCount,
+        totalCount: suite.testSuiteRun.totalTestCaseCount
+      }))
+    })
+
     if (githubComment) {
       try {
-        const testSuites = testRuns.map((testRun) => ({
-          testSuiteID: testRun.testSuiteID,
-          testSuiteName: testRun.name,
-          testSuiteRun:
-            testRun.error || testRun.runID === 0
-              ? ({
-                  id: '',
-                  result: 'Failed',
-                  startTime: new Date().toISOString(),
-                  endTime: new Date().toISOString()
-                } as any)
-              : ({
-                  id: testRun.runID,
-                  result: 'Pending'
-                } as any)
-        }))
-
         await github.comment({
           identifier: runIdentifier,
           commitSHA,
-          testSuites
+          preflightResult:
+            preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
+          preflightTestCaseId: preflightTestCaseID,
+          testSuites: initialCommentSuites
         })
-      } catch (error: any) {
-        core.warning(`Failed to comment on pull request: ${error.message}`)
+      } catch (error: unknown) {
+        core.warning(
+          `Failed to comment on pull request: ${error instanceof Error ? error.message : String(error)}`
+        )
       }
     }
 
-    // S3.1 wait for all test runs to finish in parallel
     core.info(
-      `[${timestamp()}][shiplight] waiting for all test runs to finish ...`
+      `[${timestamp()}][shiplight] polling test run and updating comment on state changes ...`
     )
+    const pollingStartTime = Date.now()
+    let lastDetailedRun = await client.getDetailedResults(startedRun.runID)
 
-    const waitPromises = testRuns.map(async (testRun) => {
-      if (testRun.error || testRun.runID === 0) {
-        return {
-          testSuiteID: testRun.testSuiteID,
-          name: testRun.name,
-          url: testRun.url,
-          result: {
-            ...(testRun.runID > 0 && { id: testRun.runID }), // Only include ID if valid
-            result: 'Failed',
-            startTime: new Date().toISOString(),
-            endTime: new Date().toISOString()
-          } as any,
-          error: testRun.error
-        }
-      }
-
-      try {
-        const result = await client.wait({
-          testSuiteRunID: testRun.runID,
-          timeout
-        })
-        return {
-          testSuiteID: testRun.testSuiteID,
-          name: testRun.name,
-          url: testRun.url,
-          result,
-          error: null
-        }
-      } catch (error: any) {
-        core.warning(
-          `Failed to wait for test suite ${testRun.testSuiteID}: ${error.message}`
+    while (true) {
+      if (Date.now() - pollingStartTime > timeout) {
+        core.setOutput('success', false)
+        core.setOutput(
+          'preflight-result',
+          preflightTestCaseID ? 'Pending' : 'Skipped'
         )
+        core.setOutput(
+          'results',
+          JSON.stringify(
+            testSuiteIDs.map((suiteID) => ({
+              testSuiteID: String(suiteID),
+              name: `Test Suite ${suiteID}`,
+              result: 'Failed',
+              url: startedRun.url,
+              error: `Timeout after ${timeoutSeconds} seconds`
+            }))
+          )
+        )
+        core.setFailed(`Test run timed out after ${timeoutSeconds} seconds`)
+        return
+      }
+
+      const testRun = lastDetailedRun.testRun
+      const testSuiteResults = lastDetailedRun.testSuiteResults || []
+      const testCaseResults = lastDetailedRun.testCaseResults || []
+
+      const suiteResultMap = new Map<number, TestSuiteResult>()
+      for (const suiteResult of testSuiteResults) {
+        if (suiteResult.testSuiteId !== undefined) {
+          suiteResultMap.set(suiteResult.testSuiteId, suiteResult)
+        }
+      }
+
+      const finalResults = testSuiteIDs.map((suiteID) => {
+        const suiteResult = suiteResultMap.get(suiteID)
+        const result: TestRunResult =
+          (suiteResult?.result as TestRunResult) || testRun.result || 'Failed'
         return {
-          testSuiteID: testRun.testSuiteID,
-          name: testRun.name,
-          url: testRun.url,
-          result: {
-            id: testRun.runID, // Preserve the original run ID from the successful start
-            result: 'Failed',
-            startTime: new Date().toISOString(),
-            endTime: new Date().toISOString()
-          } as any,
-          error: error.message
+          testSuiteID: String(suiteID),
+          name: `Test Suite ${suiteID}`,
+          url: startedRun.url,
+          result,
+          error: null as string | null,
+          suiteResult
         }
-      }
-    })
+      })
 
-    const finalResults = await Promise.all(waitPromises)
+      const preflightResult = derivePreflightResult(testRun, testCaseResults)
+      core.setOutput('preflight-result', preflightResult)
 
-    // S3.2 Fetch detailed results for failed suite runs
-    core.info(
-      `[${timestamp()}][shiplight] fetching detailed results for failed runs ...`
-    )
-    const detailedResultsPromises = finalResults.map(async (finalResult) => {
-      // Only fetch detailed results for failed runs
-      if (finalResult.result.result === 'Failed' && finalResult.result.id) {
-        try {
-          const detailedData = await client.getDetailedResults(
-            finalResult.result.id
-          )
-          return {
-            ...finalResult,
-            testCaseResults: detailedData.testCaseResults || []
-          }
-        } catch (error: any) {
-          core.warning(
-            `Failed to fetch detailed results for run ${finalResult.result.id}: ${error.message}`
-          )
-          return finalResult
-        }
-      }
-      return finalResult
-    })
+      const commentSuites = finalResults.map((finalResult) => {
+        const suiteResultId = finalResult.suiteResult?.id
+        const suiteTestCaseResults = suiteResultId
+          ? testCaseResults.filter(
+              (testCaseResult) =>
+                testCaseResult.testSuiteResultId === suiteResultId &&
+                testCaseResult.result === 'Failed'
+            )
+          : []
 
-    const finalResultsWithDetails = await Promise.all(detailedResultsPromises)
-
-    // S3.3 update comment with final results
-    core.info(
-      `[${timestamp()}][shiplight] updating comment with final results ...`
-    )
-    if (githubComment) {
-      try {
-        const testSuites = finalResultsWithDetails.map((finalResult) => ({
+        return {
           testSuiteID: finalResult.testSuiteID,
           testSuiteName: finalResult.name,
-          testSuiteRun: finalResult.result,
-          testCaseResults: (finalResult as any).testCaseResults
-        }))
+          testSuiteRun: toCommentSuiteRun(
+            startedRun.runID,
+            finalResult.suiteResult,
+            testRun,
+            finalResult.result
+          ),
+          testCaseResults: suiteTestCaseResults
+        }
+      })
 
-        await github.comment({
-          identifier: runIdentifier,
-          commitSHA,
-          testSuites
-        })
-      } catch (error: any) {
+      const currentCommentSignature = buildCommentStateSignature({
+        runStatus: testRun.status,
+        runResult: testRun.result,
+        preflightResult,
+        suites: commentSuites.map((suite) => ({
+          testSuiteID: suite.testSuiteID,
+          status: suite.testSuiteRun.status,
+          result: suite.testSuiteRun.result,
+          startTime: suite.testSuiteRun.startTime,
+          endTime: suite.testSuiteRun.endTime,
+          failedCount: suite.testSuiteRun.failedTestCaseCount,
+          passedCount: suite.testSuiteRun.passedTestCaseCount,
+          totalCount: suite.testSuiteRun.totalTestCaseCount
+        }))
+      })
+
+      if (githubComment && currentCommentSignature !== lastCommentSignature) {
+        try {
+          await github.comment({
+            identifier: runIdentifier,
+            commitSHA,
+            preflightResult,
+            preflightTestCaseId: testRun.preflightTestCaseId,
+            testSuites: commentSuites
+          })
+          lastCommentSignature = currentCommentSignature
+        } catch (error: unknown) {
+          core.warning(
+            `Failed to update comment on pull request: ${error instanceof Error ? error.message : String(error)}`
+          )
+        }
+      }
+
+      if (testRun.status === 'Finished') {
+        const failedResults = finalResults.filter(
+          (result) => result.result === 'Failed'
+        )
+        const allSuccessful = failedResults.length === 0
+
+        core.setOutput('success', allSuccessful)
+        core.setOutput(
+          'results',
+          JSON.stringify(
+            finalResults.map((result) => ({
+              testSuiteID: result.testSuiteID,
+              name: result.name,
+              result: result.result,
+              url: result.url,
+              error: result.error
+            }))
+          )
+        )
+
+        if (!allSuccessful) {
+          core.setFailed(
+            `${failedResults.length} out of ${finalResults.length} test suites failed in run ${startedRun.runID}`
+          )
+        }
+        return
+      }
+
+      await delay(POLL_INTERVAL)
+      try {
+        lastDetailedRun = await client.getDetailedResults(startedRun.runID)
+      } catch (error: unknown) {
         core.warning(
-          `Failed to update comment on pull request: ${error.message}`
+          `Polling run details failed (will retry): ${error instanceof Error ? error.message : String(error)}`
         )
       }
     }
-
-    // Log results for each test suite
-    finalResults.forEach((finalResult) => {
-      core.info(
-        `[${timestamp()}][shiplight] Test suite: ${finalResult.name} (${finalResult.testSuiteID})`
-      )
-      core.info(
-        `[${timestamp()}][shiplight] Result: ${finalResult.result.result}`
-      )
-      core.info(`[${timestamp()}][shiplight] Details: ${finalResult.url}`)
-      if (finalResult.error) {
-        core.info(`[${timestamp()}][shiplight] Error: ${finalResult.error}`)
-      }
-    })
-
-    // Determine overall success
-    const failedResults = finalResults.filter(
-      (result) => result.result.result === 'Failed'
-    )
-    const allSuccessful = failedResults.length === 0
-
-    // Set outputs
-    core.setOutput('success', allSuccessful)
-    core.setOutput(
-      'results',
-      JSON.stringify(
-        finalResults.map((result) => ({
-          testSuiteID: result.testSuiteID,
-          name: result.name,
-          result: result.result.result,
-          url: result.url,
-          error: result.error
-        }))
-      )
-    )
-
-    if (!allSuccessful) {
-      core.setFailed(
-        `${failedResults.length} out of ${finalResults.length} test runs failed`
-      )
-    }
   } catch (error) {
-    // Fail the workflow run if an error occurs
     if (error instanceof Error) {
       core.setOutput('success', false)
       core.setFailed(error.message)
+      return
     }
+
+    core.setOutput('success', false)
+    core.setFailed(String(error))
   }
 }

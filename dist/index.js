@@ -4,29 +4,27 @@ import require$$1 from 'fs';
 import require$$1$5 from 'path';
 import require$$2$1 from 'http';
 import require$$3$1 from 'https';
-import require$$0$4 from 'net';
+import require$$0$5 from 'net';
 import require$$1$1 from 'tls';
-import require$$4$1 from 'events';
-import require$$0$3 from 'assert';
+import require$$0$4 from 'assert';
 import require$$0$2 from 'util';
-import require$$0$5 from 'stream';
-import require$$7 from 'buffer';
+import require$$0$6 from 'stream';
+import require$$0$3 from 'buffer';
 import require$$8 from 'querystring';
 import require$$14 from 'stream/web';
-import require$$0$7 from 'node:stream';
+import require$$0$8 from 'node:stream';
 import require$$1$2 from 'node:util';
-import require$$0$6 from 'node:events';
-import require$$0$8 from 'worker_threads';
+import require$$0$7 from 'node:events';
+import require$$0$9 from 'worker_threads';
 import require$$2$2 from 'perf_hooks';
 import require$$5 from 'util/types';
-import require$$4$2 from 'async_hooks';
+import require$$4$1 from 'async_hooks';
 import require$$1$3 from 'console';
 import require$$1$4 from 'url';
 import require$$3$2 from 'zlib';
-import require$$6 from 'string_decoder';
-import require$$0$9 from 'diagnostics_channel';
+import require$$0$a from 'diagnostics_channel';
 import require$$2$3 from 'child_process';
-import require$$6$1 from 'timers';
+import require$$6 from 'timers';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -39,7 +37,11 @@ function getAugmentedNamespace(n) {
   var f = n.default;
 	if (typeof f == "function") {
 		var a = function a () {
-			if (this instanceof a) {
+			var isInstance = false;
+      try {
+        isInstance = this instanceof a;
+      } catch {}
+			if (isInstance) {
         return Reflect.construct(f, arguments, this.constructor);
 			}
 			return f.apply(this, arguments);
@@ -396,6 +398,490 @@ function requireProxy () {
 
 var tunnel$1 = {};
 
+var events$1 = {exports: {}};
+
+var hasRequiredEvents$1;
+
+function requireEvents$1 () {
+	if (hasRequiredEvents$1) return events$1.exports;
+	hasRequiredEvents$1 = 1;
+
+	var R = typeof Reflect === 'object' ? Reflect : null;
+	var ReflectApply = R && typeof R.apply === 'function'
+	  ? R.apply
+	  : function ReflectApply(target, receiver, args) {
+	    return Function.prototype.apply.call(target, receiver, args);
+	  };
+
+	var ReflectOwnKeys;
+	if (R && typeof R.ownKeys === 'function') {
+	  ReflectOwnKeys = R.ownKeys;
+	} else if (Object.getOwnPropertySymbols) {
+	  ReflectOwnKeys = function ReflectOwnKeys(target) {
+	    return Object.getOwnPropertyNames(target)
+	      .concat(Object.getOwnPropertySymbols(target));
+	  };
+	} else {
+	  ReflectOwnKeys = function ReflectOwnKeys(target) {
+	    return Object.getOwnPropertyNames(target);
+	  };
+	}
+
+	function ProcessEmitWarning(warning) {
+	  if (console && console.warn) console.warn(warning);
+	}
+
+	var NumberIsNaN = Number.isNaN || function NumberIsNaN(value) {
+	  return value !== value;
+	};
+
+	function EventEmitter() {
+	  EventEmitter.init.call(this);
+	}
+	events$1.exports = EventEmitter;
+	events$1.exports.once = once;
+
+	// Backwards-compat with node 0.10.x
+	EventEmitter.EventEmitter = EventEmitter;
+
+	EventEmitter.prototype._events = undefined;
+	EventEmitter.prototype._eventsCount = 0;
+	EventEmitter.prototype._maxListeners = undefined;
+
+	// By default EventEmitters will print a warning if more than 10 listeners are
+	// added to it. This is a useful default which helps finding memory leaks.
+	var defaultMaxListeners = 10;
+
+	function checkListener(listener) {
+	  if (typeof listener !== 'function') {
+	    throw new TypeError('The "listener" argument must be of type Function. Received type ' + typeof listener);
+	  }
+	}
+
+	Object.defineProperty(EventEmitter, 'defaultMaxListeners', {
+	  enumerable: true,
+	  get: function() {
+	    return defaultMaxListeners;
+	  },
+	  set: function(arg) {
+	    if (typeof arg !== 'number' || arg < 0 || NumberIsNaN(arg)) {
+	      throw new RangeError('The value of "defaultMaxListeners" is out of range. It must be a non-negative number. Received ' + arg + '.');
+	    }
+	    defaultMaxListeners = arg;
+	  }
+	});
+
+	EventEmitter.init = function() {
+
+	  if (this._events === undefined ||
+	      this._events === Object.getPrototypeOf(this)._events) {
+	    this._events = Object.create(null);
+	    this._eventsCount = 0;
+	  }
+
+	  this._maxListeners = this._maxListeners || undefined;
+	};
+
+	// Obviously not all Emitters should be limited to 10. This function allows
+	// that to be increased. Set to zero for unlimited.
+	EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
+	  if (typeof n !== 'number' || n < 0 || NumberIsNaN(n)) {
+	    throw new RangeError('The value of "n" is out of range. It must be a non-negative number. Received ' + n + '.');
+	  }
+	  this._maxListeners = n;
+	  return this;
+	};
+
+	function _getMaxListeners(that) {
+	  if (that._maxListeners === undefined)
+	    return EventEmitter.defaultMaxListeners;
+	  return that._maxListeners;
+	}
+
+	EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
+	  return _getMaxListeners(this);
+	};
+
+	EventEmitter.prototype.emit = function emit(type) {
+	  var args = [];
+	  for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
+	  var doError = (type === 'error');
+
+	  var events = this._events;
+	  if (events !== undefined)
+	    doError = (doError && events.error === undefined);
+	  else if (!doError)
+	    return false;
+
+	  // If there is no 'error' event listener then throw.
+	  if (doError) {
+	    var er;
+	    if (args.length > 0)
+	      er = args[0];
+	    if (er instanceof Error) {
+	      // Note: The comments on the `throw` lines are intentional, they show
+	      // up in Node's output if this results in an unhandled exception.
+	      throw er; // Unhandled 'error' event
+	    }
+	    // At least give some kind of context to the user
+	    var err = new Error('Unhandled error.' + (er ? ' (' + er.message + ')' : ''));
+	    err.context = er;
+	    throw err; // Unhandled 'error' event
+	  }
+
+	  var handler = events[type];
+
+	  if (handler === undefined)
+	    return false;
+
+	  if (typeof handler === 'function') {
+	    ReflectApply(handler, this, args);
+	  } else {
+	    var len = handler.length;
+	    var listeners = arrayClone(handler, len);
+	    for (var i = 0; i < len; ++i)
+	      ReflectApply(listeners[i], this, args);
+	  }
+
+	  return true;
+	};
+
+	function _addListener(target, type, listener, prepend) {
+	  var m;
+	  var events;
+	  var existing;
+
+	  checkListener(listener);
+
+	  events = target._events;
+	  if (events === undefined) {
+	    events = target._events = Object.create(null);
+	    target._eventsCount = 0;
+	  } else {
+	    // To avoid recursion in the case that type === "newListener"! Before
+	    // adding it to the listeners, first emit "newListener".
+	    if (events.newListener !== undefined) {
+	      target.emit('newListener', type,
+	                  listener.listener ? listener.listener : listener);
+
+	      // Re-assign `events` because a newListener handler could have caused the
+	      // this._events to be assigned to a new object
+	      events = target._events;
+	    }
+	    existing = events[type];
+	  }
+
+	  if (existing === undefined) {
+	    // Optimize the case of one listener. Don't need the extra array object.
+	    existing = events[type] = listener;
+	    ++target._eventsCount;
+	  } else {
+	    if (typeof existing === 'function') {
+	      // Adding the second element, need to change to array.
+	      existing = events[type] =
+	        prepend ? [listener, existing] : [existing, listener];
+	      // If we've already got an array, just append.
+	    } else if (prepend) {
+	      existing.unshift(listener);
+	    } else {
+	      existing.push(listener);
+	    }
+
+	    // Check for listener leak
+	    m = _getMaxListeners(target);
+	    if (m > 0 && existing.length > m && !existing.warned) {
+	      existing.warned = true;
+	      // No error code for this since it is a Warning
+	      // eslint-disable-next-line no-restricted-syntax
+	      var w = new Error('Possible EventEmitter memory leak detected. ' +
+	                          existing.length + ' ' + String(type) + ' listeners ' +
+	                          'added. Use emitter.setMaxListeners() to ' +
+	                          'increase limit');
+	      w.name = 'MaxListenersExceededWarning';
+	      w.emitter = target;
+	      w.type = type;
+	      w.count = existing.length;
+	      ProcessEmitWarning(w);
+	    }
+	  }
+
+	  return target;
+	}
+
+	EventEmitter.prototype.addListener = function addListener(type, listener) {
+	  return _addListener(this, type, listener, false);
+	};
+
+	EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+	EventEmitter.prototype.prependListener =
+	    function prependListener(type, listener) {
+	      return _addListener(this, type, listener, true);
+	    };
+
+	function onceWrapper() {
+	  if (!this.fired) {
+	    this.target.removeListener(this.type, this.wrapFn);
+	    this.fired = true;
+	    if (arguments.length === 0)
+	      return this.listener.call(this.target);
+	    return this.listener.apply(this.target, arguments);
+	  }
+	}
+
+	function _onceWrap(target, type, listener) {
+	  var state = { fired: false, wrapFn: undefined, target: target, type: type, listener: listener };
+	  var wrapped = onceWrapper.bind(state);
+	  wrapped.listener = listener;
+	  state.wrapFn = wrapped;
+	  return wrapped;
+	}
+
+	EventEmitter.prototype.once = function once(type, listener) {
+	  checkListener(listener);
+	  this.on(type, _onceWrap(this, type, listener));
+	  return this;
+	};
+
+	EventEmitter.prototype.prependOnceListener =
+	    function prependOnceListener(type, listener) {
+	      checkListener(listener);
+	      this.prependListener(type, _onceWrap(this, type, listener));
+	      return this;
+	    };
+
+	// Emits a 'removeListener' event if and only if the listener was removed.
+	EventEmitter.prototype.removeListener =
+	    function removeListener(type, listener) {
+	      var list, events, position, i, originalListener;
+
+	      checkListener(listener);
+
+	      events = this._events;
+	      if (events === undefined)
+	        return this;
+
+	      list = events[type];
+	      if (list === undefined)
+	        return this;
+
+	      if (list === listener || list.listener === listener) {
+	        if (--this._eventsCount === 0)
+	          this._events = Object.create(null);
+	        else {
+	          delete events[type];
+	          if (events.removeListener)
+	            this.emit('removeListener', type, list.listener || listener);
+	        }
+	      } else if (typeof list !== 'function') {
+	        position = -1;
+
+	        for (i = list.length - 1; i >= 0; i--) {
+	          if (list[i] === listener || list[i].listener === listener) {
+	            originalListener = list[i].listener;
+	            position = i;
+	            break;
+	          }
+	        }
+
+	        if (position < 0)
+	          return this;
+
+	        if (position === 0)
+	          list.shift();
+	        else {
+	          spliceOne(list, position);
+	        }
+
+	        if (list.length === 1)
+	          events[type] = list[0];
+
+	        if (events.removeListener !== undefined)
+	          this.emit('removeListener', type, originalListener || listener);
+	      }
+
+	      return this;
+	    };
+
+	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+
+	EventEmitter.prototype.removeAllListeners =
+	    function removeAllListeners(type) {
+	      var listeners, events, i;
+
+	      events = this._events;
+	      if (events === undefined)
+	        return this;
+
+	      // not listening for removeListener, no need to emit
+	      if (events.removeListener === undefined) {
+	        if (arguments.length === 0) {
+	          this._events = Object.create(null);
+	          this._eventsCount = 0;
+	        } else if (events[type] !== undefined) {
+	          if (--this._eventsCount === 0)
+	            this._events = Object.create(null);
+	          else
+	            delete events[type];
+	        }
+	        return this;
+	      }
+
+	      // emit removeListener for all listeners on all events
+	      if (arguments.length === 0) {
+	        var keys = Object.keys(events);
+	        var key;
+	        for (i = 0; i < keys.length; ++i) {
+	          key = keys[i];
+	          if (key === 'removeListener') continue;
+	          this.removeAllListeners(key);
+	        }
+	        this.removeAllListeners('removeListener');
+	        this._events = Object.create(null);
+	        this._eventsCount = 0;
+	        return this;
+	      }
+
+	      listeners = events[type];
+
+	      if (typeof listeners === 'function') {
+	        this.removeListener(type, listeners);
+	      } else if (listeners !== undefined) {
+	        // LIFO order
+	        for (i = listeners.length - 1; i >= 0; i--) {
+	          this.removeListener(type, listeners[i]);
+	        }
+	      }
+
+	      return this;
+	    };
+
+	function _listeners(target, type, unwrap) {
+	  var events = target._events;
+
+	  if (events === undefined)
+	    return [];
+
+	  var evlistener = events[type];
+	  if (evlistener === undefined)
+	    return [];
+
+	  if (typeof evlistener === 'function')
+	    return unwrap ? [evlistener.listener || evlistener] : [evlistener];
+
+	  return unwrap ?
+	    unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
+	}
+
+	EventEmitter.prototype.listeners = function listeners(type) {
+	  return _listeners(this, type, true);
+	};
+
+	EventEmitter.prototype.rawListeners = function rawListeners(type) {
+	  return _listeners(this, type, false);
+	};
+
+	EventEmitter.listenerCount = function(emitter, type) {
+	  if (typeof emitter.listenerCount === 'function') {
+	    return emitter.listenerCount(type);
+	  } else {
+	    return listenerCount.call(emitter, type);
+	  }
+	};
+
+	EventEmitter.prototype.listenerCount = listenerCount;
+	function listenerCount(type) {
+	  var events = this._events;
+
+	  if (events !== undefined) {
+	    var evlistener = events[type];
+
+	    if (typeof evlistener === 'function') {
+	      return 1;
+	    } else if (evlistener !== undefined) {
+	      return evlistener.length;
+	    }
+	  }
+
+	  return 0;
+	}
+
+	EventEmitter.prototype.eventNames = function eventNames() {
+	  return this._eventsCount > 0 ? ReflectOwnKeys(this._events) : [];
+	};
+
+	function arrayClone(arr, n) {
+	  var copy = new Array(n);
+	  for (var i = 0; i < n; ++i)
+	    copy[i] = arr[i];
+	  return copy;
+	}
+
+	function spliceOne(list, index) {
+	  for (; index + 1 < list.length; index++)
+	    list[index] = list[index + 1];
+	  list.pop();
+	}
+
+	function unwrapListeners(arr) {
+	  var ret = new Array(arr.length);
+	  for (var i = 0; i < ret.length; ++i) {
+	    ret[i] = arr[i].listener || arr[i];
+	  }
+	  return ret;
+	}
+
+	function once(emitter, name) {
+	  return new Promise(function (resolve, reject) {
+	    function errorListener(err) {
+	      emitter.removeListener(name, resolver);
+	      reject(err);
+	    }
+
+	    function resolver() {
+	      if (typeof emitter.removeListener === 'function') {
+	        emitter.removeListener('error', errorListener);
+	      }
+	      resolve([].slice.call(arguments));
+	    }
+	    eventTargetAgnosticAddListener(emitter, name, resolver, { once: true });
+	    if (name !== 'error') {
+	      addErrorHandlerIfEventEmitter(emitter, errorListener, { once: true });
+	    }
+	  });
+	}
+
+	function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
+	  if (typeof emitter.on === 'function') {
+	    eventTargetAgnosticAddListener(emitter, 'error', handler, flags);
+	  }
+	}
+
+	function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
+	  if (typeof emitter.on === 'function') {
+	    if (flags.once) {
+	      emitter.once(name, listener);
+	    } else {
+	      emitter.on(name, listener);
+	    }
+	  } else if (typeof emitter.addEventListener === 'function') {
+	    // EventTarget does not have `error` event semantics like Node
+	    // EventEmitters, we do not listen for `error` events here.
+	    emitter.addEventListener(name, function wrapListener(arg) {
+	      // IE does not have builtin `{ once: true }` support so we
+	      // have to do it manually.
+	      if (flags.once) {
+	        emitter.removeEventListener(name, wrapListener);
+	      }
+	      listener(arg);
+	    });
+	  } else {
+	    throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
+	  }
+	}
+	return events$1.exports;
+}
+
 var hasRequiredTunnel$1;
 
 function requireTunnel$1 () {
@@ -404,7 +890,7 @@ function requireTunnel$1 () {
 	var tls = require$$1$1;
 	var http = require$$2$1;
 	var https = require$$3$1;
-	var events = require$$4$1;
+	var events = requireEvents$1();
 	var util = require$$0$2;
 
 
@@ -1119,13 +1605,13 @@ function requireUtil$6 () {
 	if (hasRequiredUtil$6) return util$6;
 	hasRequiredUtil$6 = 1;
 
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { kDestroyed, kBodyUsed } = requireSymbols$4();
 	const { IncomingMessage } = require$$2$1;
-	const stream = require$$0$5;
-	const net = require$$0$4;
+	const stream = require$$0$6;
+	const net = require$$0$5;
 	const { InvalidArgumentError } = requireErrors();
-	const { Blob } = require$$7;
+	const { Blob } = require$$0$3;
 	const nodeUtil = require$$0$2;
 	const { stringify } = require$$8;
 	const { headerNameLowerCasedRecord } = requireConstants$4();
@@ -1782,7 +2268,7 @@ function requireSbmh () {
 	 * Based heavily on the Streaming Boyer-Moore-Horspool C++ implementation
 	 * by Hongli Lai at: https://github.com/FooBarWidget/boyer-moore-horspool
 	 */
-	const EventEmitter = require$$0$6.EventEmitter;
+	const EventEmitter = require$$0$7.EventEmitter;
 	const inherits = require$$1$2.inherits;
 
 	function SBMH (needle) {
@@ -1993,7 +2479,7 @@ function requirePartStream () {
 	hasRequiredPartStream = 1;
 
 	const inherits = require$$1$2.inherits;
-	const ReadableStream = require$$0$7.Readable;
+	const ReadableStream = require$$0$8.Readable;
 
 	function PartStream (opts) {
 	  ReadableStream.call(this, opts);
@@ -2037,7 +2523,7 @@ function requireHeaderParser () {
 	if (hasRequiredHeaderParser) return HeaderParser_1;
 	hasRequiredHeaderParser = 1;
 
-	const EventEmitter = require$$0$6.EventEmitter;
+	const EventEmitter = require$$0$7.EventEmitter;
 	const inherits = require$$1$2.inherits;
 	const getLimit = requireGetLimit();
 
@@ -2145,7 +2631,7 @@ function requireDicer () {
 	if (hasRequiredDicer) return Dicer_1;
 	hasRequiredDicer = 1;
 
-	const WritableStream = require$$0$7.Writable;
+	const WritableStream = require$$0$8.Writable;
 	const inherits = require$$1$2.inherits;
 
 	const StreamSearch = requireSbmh();
@@ -2722,7 +3208,7 @@ function requireMultipart () {
 	//  * support limits.fieldNameSize
 	//     -- this will require modifications to utils.parseParams
 
-	const { Readable } = require$$0$7;
+	const { Readable } = require$$0$8;
 	const { inherits } = require$$1$2;
 
 	const Dicer = requireDicer();
@@ -3288,7 +3774,7 @@ function requireMain () {
 	if (hasRequiredMain) return main.exports;
 	hasRequiredMain = 1;
 
-	const WritableStream = require$$0$7.Writable;
+	const WritableStream = require$$0$8.Writable;
 	const { inherits } = require$$1$2;
 	const Dicer = requireDicer();
 
@@ -3381,7 +3867,7 @@ function requireConstants$3 () {
 	if (hasRequiredConstants$3) return constants$3;
 	hasRequiredConstants$3 = 1;
 
-	const { MessageChannel, receiveMessageOnPort } = require$$0$8;
+	const { MessageChannel, receiveMessageOnPort } = require$$0$9;
 
 	const corsSafeListedMethods = ['GET', 'HEAD', 'POST'];
 	const corsSafeListedMethodsSet = new Set(corsSafeListedMethods);
@@ -3592,7 +4078,7 @@ function requireUtil$5 () {
 	const { getGlobalOrigin } = requireGlobal$1();
 	const { performance } = require$$2$2;
 	const { isBlobLike, toUSVString, ReadableStreamFrom } = requireUtil$6();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { isUint8Array } = require$$5;
 
 	let supportedHashes = [];
@@ -5410,8 +5896,8 @@ var hasRequiredDataURL;
 function requireDataURL () {
 	if (hasRequiredDataURL) return dataURL;
 	hasRequiredDataURL = 1;
-	const assert = require$$0$3;
-	const { atob } = require$$7;
+	const assert = require$$0$4;
+	const { atob } = require$$0$3;
 	const { isomorphicDecode } = requireUtil$5();
 
 	const encoder = new TextEncoder();
@@ -6047,7 +6533,7 @@ function requireFile () {
 	if (hasRequiredFile) return file;
 	hasRequiredFile = 1;
 
-	const { Blob, File: NativeFile } = require$$7;
+	const { Blob, File: NativeFile } = require$$0$3;
 	const { types } = require$$0$2;
 	const { kState } = requireSymbols$3();
 	const { isBlobLike } = requireUtil$5();
@@ -6403,7 +6889,7 @@ function requireFormdata () {
 	const { kState } = requireSymbols$3();
 	const { File: UndiciFile, FileLike, isFileLike } = requireFile();
 	const { webidl } = requireWebidl();
-	const { Blob, File: NativeFile } = require$$7;
+	const { Blob, File: NativeFile } = require$$0$3;
 
 	/** @type {globalThis['File']} */
 	const File = NativeFile ?? UndiciFile;
@@ -6686,9 +7172,9 @@ function requireBody () {
 	const { kState } = requireSymbols$3();
 	const { webidl } = requireWebidl();
 	const { DOMException, structuredClone } = requireConstants$3();
-	const { Blob, File: NativeFile } = require$$7;
+	const { Blob, File: NativeFile } = require$$0$3;
 	const { kBodyUsed } = requireSymbols$4();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { isErrored } = requireUtil$6();
 	const { isUint8Array, isArrayBuffer } = require$$5;
 	const { File: UndiciFile } = requireFile();
@@ -7297,7 +7783,7 @@ function requireRequest$1 () {
 	  InvalidArgumentError,
 	  NotSupportedError
 	} = requireErrors();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { kHTTP2BuildRequest, kHTTP2CopyHeaders, kHTTP1BuildRequest } = requireSymbols$4();
 	const util = requireUtil$6();
 
@@ -7800,7 +8286,7 @@ function requireDispatcher () {
 	if (hasRequiredDispatcher) return dispatcher;
 	hasRequiredDispatcher = 1;
 
-	const EventEmitter = require$$4$1;
+	const EventEmitter = requireEvents$1();
 
 	class Dispatcher extends EventEmitter {
 	  dispatch () {
@@ -8027,8 +8513,8 @@ function requireConnect () {
 	if (hasRequiredConnect) return connect;
 	hasRequiredConnect = 1;
 
-	const net = require$$0$4;
-	const assert = require$$0$3;
+	const net = require$$0$5;
+	const assert = require$$0$4;
 	const util = requireUtil$6();
 	const { InvalidArgumentError, ConnectTimeoutError } = requireErrors();
 
@@ -8533,9 +9019,9 @@ function requireRedirectHandler () {
 
 	const util = requireUtil$6();
 	const { kBodyUsed } = requireSymbols$4();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { InvalidArgumentError } = requireErrors();
-	const EE = require$$4$1;
+	const EE = requireEvents$1();
 
 	const redirectableStatusCodes = [300, 301, 302, 303, 307, 308];
 
@@ -8793,10 +9279,10 @@ function requireClient () {
 
 	/* global WebAssembly */
 
-	const assert = require$$0$3;
-	const net = require$$0$4;
+	const assert = require$$0$4;
+	const net = require$$0$5;
 	const http = require$$2$1;
-	const { pipeline } = require$$0$5;
+	const { pipeline } = require$$0$6;
 	const util = requireUtil$6();
 	const timers = requireTimers();
 	const Request = requireRequest$1();
@@ -11978,8 +12464,8 @@ function requireReadable () {
 	if (hasRequiredReadable) return readable;
 	hasRequiredReadable = 1;
 
-	const assert = require$$0$3;
-	const { Readable } = require$$0$5;
+	const assert = require$$0$4;
+	const { Readable } = require$$0$6;
 	const { RequestAbortedError, NotSupportedError, InvalidArgumentError } = requireErrors();
 	const util = requireUtil$6();
 	const { ReadableStreamFrom, toUSVString } = requireUtil$6();
@@ -12305,7 +12791,7 @@ var hasRequiredUtil$4;
 function requireUtil$4 () {
 	if (hasRequiredUtil$4) return util$4;
 	hasRequiredUtil$4 = 1;
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const {
 	  ResponseStatusCodeError
 	} = requireErrors();
@@ -12430,7 +12916,7 @@ function requireApiRequest () {
 	} = requireErrors();
 	const util = requireUtil$6();
 	const { getResolveErrorBodyCallback } = requireUtil$4();
-	const { AsyncResource } = require$$4$2;
+	const { AsyncResource } = require$$4$1;
 	const { addSignal, removeSignal } = requireAbortSignal();
 
 	class RequestHandler extends AsyncResource {
@@ -12611,7 +13097,7 @@ function requireApiStream () {
 	if (hasRequiredApiStream) return apiStream;
 	hasRequiredApiStream = 1;
 
-	const { finished, PassThrough } = require$$0$5;
+	const { finished, PassThrough } = require$$0$6;
 	const {
 	  InvalidArgumentError,
 	  InvalidReturnValueError,
@@ -12619,7 +13105,7 @@ function requireApiStream () {
 	} = requireErrors();
 	const util = requireUtil$6();
 	const { getResolveErrorBodyCallback } = requireUtil$4();
-	const { AsyncResource } = require$$4$2;
+	const { AsyncResource } = require$$4$1;
 	const { addSignal, removeSignal } = requireAbortSignal();
 
 	class StreamHandler extends AsyncResource {
@@ -12843,16 +13329,16 @@ function requireApiPipeline () {
 	  Readable,
 	  Duplex,
 	  PassThrough
-	} = require$$0$5;
+	} = require$$0$6;
 	const {
 	  InvalidArgumentError,
 	  InvalidReturnValueError,
 	  RequestAbortedError
 	} = requireErrors();
 	const util = requireUtil$6();
-	const { AsyncResource } = require$$4$2;
+	const { AsyncResource } = require$$4$1;
 	const { addSignal, removeSignal } = requireAbortSignal();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 
 	const kResume = Symbol('resume');
 
@@ -13097,10 +13583,10 @@ function requireApiUpgrade () {
 	hasRequiredApiUpgrade = 1;
 
 	const { InvalidArgumentError, RequestAbortedError, SocketError } = requireErrors();
-	const { AsyncResource } = require$$4$2;
+	const { AsyncResource } = require$$4$1;
 	const util = requireUtil$6();
 	const { addSignal, removeSignal } = requireAbortSignal();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 
 	class UpgradeHandler extends AsyncResource {
 	  constructor (opts, callback) {
@@ -13209,7 +13695,7 @@ function requireApiConnect () {
 	if (hasRequiredApiConnect) return apiConnect;
 	hasRequiredApiConnect = 1;
 
-	const { AsyncResource } = require$$4$2;
+	const { AsyncResource } = require$$4$1;
 	const { InvalidArgumentError, RequestAbortedError, SocketError } = requireErrors();
 	const util = requireUtil$6();
 	const { addSignal, removeSignal } = requireAbortSignal();
@@ -14136,7 +14622,7 @@ function requirePendingInterceptorsFormatter () {
 	if (hasRequiredPendingInterceptorsFormatter) return pendingInterceptorsFormatter;
 	hasRequiredPendingInterceptorsFormatter = 1;
 
-	const { Transform } = require$$0$5;
+	const { Transform } = require$$0$6;
 	const { Console } = require$$1$3;
 
 	/**
@@ -14559,7 +15045,7 @@ var hasRequiredRetryHandler;
 function requireRetryHandler () {
 	if (hasRequiredRetryHandler) return RetryHandler_1;
 	hasRequiredRetryHandler = 1;
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 
 	const { kRetryHandlerDefaultRetry } = requireSymbols$4();
 	const { RequestRetryError } = requireErrors();
@@ -14998,7 +15484,7 @@ function requireHeaders () {
 	} = requireUtil$5();
 	const util = require$$0$2;
 	const { webidl } = requireWebidl();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 
 	const kHeadersMap = Symbol('headers map');
 	const kHeadersSortedMap = Symbol('headers map sorted');
@@ -15604,7 +16090,7 @@ function requireResponse () {
 	const { getGlobalOrigin } = requireGlobal$1();
 	const { URLSerializer } = requireDataURL();
 	const { kHeadersList, kConstruct } = requireSymbols$4();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { types } = require$$0$2;
 
 	const ReadableStream = globalThis.ReadableStream || require$$14.ReadableStream;
@@ -16188,8 +16674,8 @@ function requireRequest () {
 	const { getGlobalOrigin } = requireGlobal$1();
 	const { URLSerializer } = requireDataURL();
 	const { kHeadersList, kConstruct } = requireSymbols$4();
-	const assert = require$$0$3;
-	const { getMaxListeners, setMaxListeners, getEventListeners, defaultMaxListeners } = require$$4$1;
+	const assert = require$$0$4;
+	const { getMaxListeners, setMaxListeners, getEventListeners, defaultMaxListeners } = requireEvents$1();
 
 	let TransformStream = globalThis.TransformStream;
 
@@ -17154,7 +17640,7 @@ function requireFetch () {
 	  urlHasHttpsScheme
 	} = requireUtil$5();
 	const { kState, kHeaders, kGuard, kRealm } = requireSymbols$3();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { safelyExtractBody } = requireBody();
 	const {
 	  redirectStatusSet,
@@ -17165,8 +17651,8 @@ function requireFetch () {
 	  DOMException
 	} = requireConstants$3();
 	const { kHeadersList } = requireSymbols$4();
-	const EE = require$$4$1;
-	const { Readable, pipeline } = require$$0$5;
+	const EE = requireEvents$1();
+	const { Readable, pipeline } = require$$0$6;
 	const { addAbortListener, isErrored, isReadable, nodeMajor, nodeMinor } = requireUtil$6();
 	const { dataURLProcessor, serializeAMimeType } = requireDataURL();
 	const { TransformStream } = require$$14;
@@ -17899,7 +18385,7 @@ function requireFetch () {
 	    }
 	    case 'blob:': {
 	      if (!resolveObjectURL) {
-	        resolveObjectURL = require$$7.resolveObjectURL;
+	        resolveObjectURL = require$$0$3.resolveObjectURL;
 	      }
 
 	      // 1. Let blobURLEntry be request’s current URL’s blob URL entry.
@@ -19588,6 +20074,367 @@ function requireEncoding () {
 	return encoding;
 }
 
+var string_decoder = {};
+
+var safeBuffer = {exports: {}};
+
+/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+var hasRequiredSafeBuffer;
+
+function requireSafeBuffer () {
+	if (hasRequiredSafeBuffer) return safeBuffer.exports;
+	hasRequiredSafeBuffer = 1;
+	(function (module, exports) {
+		/* eslint-disable node/no-deprecated-api */
+		var buffer = require$$0$3;
+		var Buffer = buffer.Buffer;
+
+		// alternative to using Object.keys for old browsers
+		function copyProps (src, dst) {
+		  for (var key in src) {
+		    dst[key] = src[key];
+		  }
+		}
+		if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
+		  module.exports = buffer;
+		} else {
+		  // Copy properties from require('buffer')
+		  copyProps(buffer, exports);
+		  exports.Buffer = SafeBuffer;
+		}
+
+		function SafeBuffer (arg, encodingOrOffset, length) {
+		  return Buffer(arg, encodingOrOffset, length)
+		}
+
+		SafeBuffer.prototype = Object.create(Buffer.prototype);
+
+		// Copy static methods from Buffer
+		copyProps(Buffer, SafeBuffer);
+
+		SafeBuffer.from = function (arg, encodingOrOffset, length) {
+		  if (typeof arg === 'number') {
+		    throw new TypeError('Argument must not be a number')
+		  }
+		  return Buffer(arg, encodingOrOffset, length)
+		};
+
+		SafeBuffer.alloc = function (size, fill, encoding) {
+		  if (typeof size !== 'number') {
+		    throw new TypeError('Argument must be a number')
+		  }
+		  var buf = Buffer(size);
+		  if (fill !== undefined) {
+		    if (typeof encoding === 'string') {
+		      buf.fill(fill, encoding);
+		    } else {
+		      buf.fill(fill);
+		    }
+		  } else {
+		    buf.fill(0);
+		  }
+		  return buf
+		};
+
+		SafeBuffer.allocUnsafe = function (size) {
+		  if (typeof size !== 'number') {
+		    throw new TypeError('Argument must be a number')
+		  }
+		  return Buffer(size)
+		};
+
+		SafeBuffer.allocUnsafeSlow = function (size) {
+		  if (typeof size !== 'number') {
+		    throw new TypeError('Argument must be a number')
+		  }
+		  return buffer.SlowBuffer(size)
+		}; 
+	} (safeBuffer, safeBuffer.exports));
+	return safeBuffer.exports;
+}
+
+var hasRequiredString_decoder;
+
+function requireString_decoder () {
+	if (hasRequiredString_decoder) return string_decoder;
+	hasRequiredString_decoder = 1;
+
+	/*<replacement>*/
+
+	var Buffer = requireSafeBuffer().Buffer;
+	/*</replacement>*/
+
+	var isEncoding = Buffer.isEncoding || function (encoding) {
+	  encoding = '' + encoding;
+	  switch (encoding && encoding.toLowerCase()) {
+	    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
+	      return true;
+	    default:
+	      return false;
+	  }
+	};
+
+	function _normalizeEncoding(enc) {
+	  if (!enc) return 'utf8';
+	  var retried;
+	  while (true) {
+	    switch (enc) {
+	      case 'utf8':
+	      case 'utf-8':
+	        return 'utf8';
+	      case 'ucs2':
+	      case 'ucs-2':
+	      case 'utf16le':
+	      case 'utf-16le':
+	        return 'utf16le';
+	      case 'latin1':
+	      case 'binary':
+	        return 'latin1';
+	      case 'base64':
+	      case 'ascii':
+	      case 'hex':
+	        return enc;
+	      default:
+	        if (retried) return; // undefined
+	        enc = ('' + enc).toLowerCase();
+	        retried = true;
+	    }
+	  }
+	}
+	// Do not cache `Buffer.isEncoding` when checking encoding names as some
+	// modules monkey-patch it to support additional encodings
+	function normalizeEncoding(enc) {
+	  var nenc = _normalizeEncoding(enc);
+	  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
+	  return nenc || enc;
+	}
+
+	// StringDecoder provides an interface for efficiently splitting a series of
+	// buffers into a series of JS strings without breaking apart multi-byte
+	// characters.
+	string_decoder.StringDecoder = StringDecoder;
+	function StringDecoder(encoding) {
+	  this.encoding = normalizeEncoding(encoding);
+	  var nb;
+	  switch (this.encoding) {
+	    case 'utf16le':
+	      this.text = utf16Text;
+	      this.end = utf16End;
+	      nb = 4;
+	      break;
+	    case 'utf8':
+	      this.fillLast = utf8FillLast;
+	      nb = 4;
+	      break;
+	    case 'base64':
+	      this.text = base64Text;
+	      this.end = base64End;
+	      nb = 3;
+	      break;
+	    default:
+	      this.write = simpleWrite;
+	      this.end = simpleEnd;
+	      return;
+	  }
+	  this.lastNeed = 0;
+	  this.lastTotal = 0;
+	  this.lastChar = Buffer.allocUnsafe(nb);
+	}
+
+	StringDecoder.prototype.write = function (buf) {
+	  if (buf.length === 0) return '';
+	  var r;
+	  var i;
+	  if (this.lastNeed) {
+	    r = this.fillLast(buf);
+	    if (r === undefined) return '';
+	    i = this.lastNeed;
+	    this.lastNeed = 0;
+	  } else {
+	    i = 0;
+	  }
+	  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
+	  return r || '';
+	};
+
+	StringDecoder.prototype.end = utf8End;
+
+	// Returns only complete characters in a Buffer
+	StringDecoder.prototype.text = utf8Text;
+
+	// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
+	StringDecoder.prototype.fillLast = function (buf) {
+	  if (this.lastNeed <= buf.length) {
+	    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
+	    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+	  }
+	  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
+	  this.lastNeed -= buf.length;
+	};
+
+	// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
+	// continuation byte. If an invalid byte is detected, -2 is returned.
+	function utf8CheckByte(byte) {
+	  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
+	  return byte >> 6 === 0x02 ? -1 : -2;
+	}
+
+	// Checks at most 3 bytes at the end of a Buffer in order to detect an
+	// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
+	// needed to complete the UTF-8 character (if applicable) are returned.
+	function utf8CheckIncomplete(self, buf, i) {
+	  var j = buf.length - 1;
+	  if (j < i) return 0;
+	  var nb = utf8CheckByte(buf[j]);
+	  if (nb >= 0) {
+	    if (nb > 0) self.lastNeed = nb - 1;
+	    return nb;
+	  }
+	  if (--j < i || nb === -2) return 0;
+	  nb = utf8CheckByte(buf[j]);
+	  if (nb >= 0) {
+	    if (nb > 0) self.lastNeed = nb - 2;
+	    return nb;
+	  }
+	  if (--j < i || nb === -2) return 0;
+	  nb = utf8CheckByte(buf[j]);
+	  if (nb >= 0) {
+	    if (nb > 0) {
+	      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
+	    }
+	    return nb;
+	  }
+	  return 0;
+	}
+
+	// Validates as many continuation bytes for a multi-byte UTF-8 character as
+	// needed or are available. If we see a non-continuation byte where we expect
+	// one, we "replace" the validated continuation bytes we've seen so far with
+	// a single UTF-8 replacement character ('\ufffd'), to match v8's UTF-8 decoding
+	// behavior. The continuation byte check is included three times in the case
+	// where all of the continuation bytes for a character exist in the same buffer.
+	// It is also done this way as a slight performance increase instead of using a
+	// loop.
+	function utf8CheckExtraBytes(self, buf, p) {
+	  if ((buf[0] & 0xC0) !== 0x80) {
+	    self.lastNeed = 0;
+	    return '\ufffd';
+	  }
+	  if (self.lastNeed > 1 && buf.length > 1) {
+	    if ((buf[1] & 0xC0) !== 0x80) {
+	      self.lastNeed = 1;
+	      return '\ufffd';
+	    }
+	    if (self.lastNeed > 2 && buf.length > 2) {
+	      if ((buf[2] & 0xC0) !== 0x80) {
+	        self.lastNeed = 2;
+	        return '\ufffd';
+	      }
+	    }
+	  }
+	}
+
+	// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
+	function utf8FillLast(buf) {
+	  var p = this.lastTotal - this.lastNeed;
+	  var r = utf8CheckExtraBytes(this, buf);
+	  if (r !== undefined) return r;
+	  if (this.lastNeed <= buf.length) {
+	    buf.copy(this.lastChar, p, 0, this.lastNeed);
+	    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+	  }
+	  buf.copy(this.lastChar, p, 0, buf.length);
+	  this.lastNeed -= buf.length;
+	}
+
+	// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
+	// partial character, the character's bytes are buffered until the required
+	// number of bytes are available.
+	function utf8Text(buf, i) {
+	  var total = utf8CheckIncomplete(this, buf, i);
+	  if (!this.lastNeed) return buf.toString('utf8', i);
+	  this.lastTotal = total;
+	  var end = buf.length - (total - this.lastNeed);
+	  buf.copy(this.lastChar, 0, end);
+	  return buf.toString('utf8', i, end);
+	}
+
+	// For UTF-8, a replacement character is added when ending on a partial
+	// character.
+	function utf8End(buf) {
+	  var r = buf && buf.length ? this.write(buf) : '';
+	  if (this.lastNeed) return r + '\ufffd';
+	  return r;
+	}
+
+	// UTF-16LE typically needs two bytes per character, but even if we have an even
+	// number of bytes available, we need to check if we end on a leading/high
+	// surrogate. In that case, we need to wait for the next two bytes in order to
+	// decode the last character properly.
+	function utf16Text(buf, i) {
+	  if ((buf.length - i) % 2 === 0) {
+	    var r = buf.toString('utf16le', i);
+	    if (r) {
+	      var c = r.charCodeAt(r.length - 1);
+	      if (c >= 0xD800 && c <= 0xDBFF) {
+	        this.lastNeed = 2;
+	        this.lastTotal = 4;
+	        this.lastChar[0] = buf[buf.length - 2];
+	        this.lastChar[1] = buf[buf.length - 1];
+	        return r.slice(0, -1);
+	      }
+	    }
+	    return r;
+	  }
+	  this.lastNeed = 1;
+	  this.lastTotal = 2;
+	  this.lastChar[0] = buf[buf.length - 1];
+	  return buf.toString('utf16le', i, buf.length - 1);
+	}
+
+	// For UTF-16LE we do not explicitly append special replacement characters if we
+	// end on a partial character, we simply let v8 handle that.
+	function utf16End(buf) {
+	  var r = buf && buf.length ? this.write(buf) : '';
+	  if (this.lastNeed) {
+	    var end = this.lastTotal - this.lastNeed;
+	    return r + this.lastChar.toString('utf16le', 0, end);
+	  }
+	  return r;
+	}
+
+	function base64Text(buf, i) {
+	  var n = (buf.length - i) % 3;
+	  if (n === 0) return buf.toString('base64', i);
+	  this.lastNeed = 3 - n;
+	  this.lastTotal = 3;
+	  if (n === 1) {
+	    this.lastChar[0] = buf[buf.length - 1];
+	  } else {
+	    this.lastChar[0] = buf[buf.length - 2];
+	    this.lastChar[1] = buf[buf.length - 1];
+	  }
+	  return buf.toString('base64', i, buf.length - n);
+	}
+
+	function base64End(buf) {
+	  var r = buf && buf.length ? this.write(buf) : '';
+	  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
+	  return r;
+	}
+
+	// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
+	function simpleWrite(buf) {
+	  return buf.toString(this.encoding);
+	}
+
+	function simpleEnd(buf) {
+	  return buf && buf.length ? this.write(buf) : '';
+	}
+	return string_decoder;
+}
+
 var util$3;
 var hasRequiredUtil$3;
 
@@ -19607,8 +20454,8 @@ function requireUtil$3 () {
 	const { DOMException } = requireConstants$3();
 	const { serializeAMimeType, parseMIMEType } = requireDataURL();
 	const { types } = require$$0$2;
-	const { StringDecoder } = require$$6;
-	const { btoa } = require$$7;
+	const { StringDecoder } = requireString_decoder();
+	const { btoa } = require$$0$3;
 
 	/** @type {PropertyDescriptor} */
 	const staticPropertyDescriptors = {
@@ -20360,7 +21207,7 @@ function requireUtil$2 () {
 	if (hasRequiredUtil$2) return util$2;
 	hasRequiredUtil$2 = 1;
 
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { URLSerializer } = requireDataURL();
 	const { isValidHeaderName } = requireUtil$5();
 
@@ -20427,7 +21274,7 @@ function requireCache () {
 	const { kState, kHeaders, kGuard, kRealm } = requireSymbols$3();
 	const { fetching } = requireFetch();
 	const { urlIsHttpHttpsScheme, createDeferredPromise, readAllBytes } = requireUtil$5();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 	const { getGlobalDispatcher } = requireGlobal();
 
 	/**
@@ -21720,7 +22567,7 @@ function requireParse () {
 	const { maxNameValuePairSize, maxAttributeValueSize } = requireConstants$1();
 	const { isCTLExcludingHtab } = requireUtil$1();
 	const { collectASequenceOfCodePointsFast } = requireDataURL();
-	const assert = require$$0$3;
+	const assert = require$$0$4;
 
 	/**
 	 * @description Parses the field-value attributes of a set-cookie header string.
@@ -22314,7 +23161,7 @@ function requireEvents () {
 
 	const { webidl } = requireWebidl();
 	const { kEnumerableProperty } = requireUtil$6();
-	const { MessagePort } = require$$0$8;
+	const { MessagePort } = require$$0$9;
 
 	/**
 	 * @see https://html.spec.whatwg.org/multipage/comms.html#messageevent
@@ -22831,7 +23678,7 @@ function requireConnection () {
 	if (hasRequiredConnection) return connection;
 	hasRequiredConnection = 1;
 
-	const diagnosticsChannel = require$$0$9;
+	const diagnosticsChannel = require$$0$a;
 	const { uid, states } = requireConstants();
 	const {
 	  kReadyState,
@@ -23211,8 +24058,8 @@ function requireReceiver () {
 	if (hasRequiredReceiver) return receiver;
 	hasRequiredReceiver = 1;
 
-	const { Writable } = require$$0$5;
-	const diagnosticsChannel = require$$0$9;
+	const { Writable } = require$$0$6;
+	const diagnosticsChannel = require$$0$a;
 	const { parserStates, opcodes, states, emptyBuffer } = requireConstants();
 	const { kReadyState, kSentClose, kResponse, kReceivedClose } = requireSymbols();
 	const { isValidStatusCode, failWebsocketConnection, websocketMessageReceived } = requireUtil();
@@ -25811,7 +26658,7 @@ function requireIo () {
 	};
 	Object.defineProperty(io, "__esModule", { value: true });
 	io.findInPath = io.which = io.mkdirP = io.rmRF = io.mv = io.cp = void 0;
-	const assert_1 = require$$0$3;
+	const assert_1 = require$$0$4;
 	const path = __importStar(require$$1$5);
 	const ioUtil = __importStar(requireIoUtil());
 	/**
@@ -26118,12 +26965,12 @@ function requireToolrunner () {
 	Object.defineProperty(toolrunner, "__esModule", { value: true });
 	toolrunner.argStringToArray = toolrunner.ToolRunner = void 0;
 	const os = __importStar(require$$0);
-	const events = __importStar(require$$4$1);
+	const events = __importStar(requireEvents$1());
 	const child = __importStar(require$$2$3);
 	const path = __importStar(require$$1$5);
 	const io = __importStar(requireIo());
 	const ioUtil = __importStar(requireIoUtil());
-	const timers_1 = require$$6$1;
+	const timers_1 = require$$6;
 	/* eslint-disable @typescript-eslint/unbound-method */
 	const IS_WINDOWS = process.platform === 'win32';
 	/*
@@ -26742,7 +27589,7 @@ function requireExec () {
 	};
 	Object.defineProperty(exec, "__esModule", { value: true });
 	exec.getExecOutput = exec.exec = void 0;
-	const string_decoder_1 = require$$6;
+	const string_decoder_1 = requireString_decoder();
 	const tr = __importStar(requireToolrunner());
 	/**
 	 * Exec a command.
@@ -27274,283 +28121,6 @@ function requireCore () {
 }
 
 var coreExports = requireCore();
-
-// APP_URL is the base url for the shiplight app
-const APP_URL = process.env.SHIPLIGHT_APP_URL || 'https://app.shiplight.ai';
-// API_URL is the base url for the shiplight api server
-const API_URL = process.env.SHIPLIGHT_API_URL || 'https://api.shiplight.ai';
-// MAX_WAIT_TIME is the maximum time to wait for a test run to finish
-const MAX_WAIT_TIME = 24 * 60 * 60 * 1000; // 24 hours
-// POLL_INTERVAL is the interval to poll the test run status
-const POLL_INTERVAL = 10000; // 10 seconds
-
-// Helper function for delays
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-// Helper function for timestamps
-const timestamp = () => new Date().toISOString().replace('T', ' ').substring(0, 19);
-// Helper function to make fetch requests with retry logic
-async function fetchWithRetry(url, options, maxRetries = 3, retryDelay = 1000) {
-    let lastError = null;
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            coreExports.debug(`[${timestamp()}][fetch] Attempt ${attempt}/${maxRetries} for ${url}`);
-            const response = await fetch(url, options);
-            // If we get a response (even if it's an error status), return it
-            // We'll handle the status code in the calling function
-            return response;
-        }
-        catch (error) {
-            lastError = error;
-            coreExports.debug(`[${timestamp()}][fetch] Attempt ${attempt} failed: ${lastError.message}`);
-            // Don't retry on the last attempt
-            if (attempt < maxRetries) {
-                const waitTime = retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
-                coreExports.debug(`[${timestamp()}][fetch] Waiting ${waitTime}ms before retry...`);
-                await delay(waitTime);
-            }
-        }
-    }
-    throw new Error(`Failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
-}
-class Client {
-    config;
-    constructor(config) {
-        this.config = config;
-        if (!this.config.apiToken) {
-            throw new Error('API token is required');
-        }
-        // Validate token format
-        const trimmedToken = this.config.apiToken.trim();
-        if (trimmedToken.length < 10) {
-            throw new Error('API token appears to be invalid (too short)');
-        }
-        // Update config with trimmed token
-        this.config.apiToken = trimmedToken;
-    }
-    async start(config) {
-        const { testSuiteID: testSuiteId, environmentID, environmentURL } = config;
-        if (!testSuiteId) {
-            throw new Error('Test suite id is required');
-        }
-        const url = `${API_URL}/v1/test-run/test-suite/${testSuiteId}`;
-        const body = {
-            environment: {
-                id: environmentID,
-                url: environmentURL
-            },
-            testContext: {},
-            trigger: this.config.trigger
-        };
-        coreExports.debug('[client.start] request: ' +
-            JSON.stringify({
-                method: 'POST',
-                url,
-                body,
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer ***'
-                }
-            }, null, 2));
-        try {
-            const response = await fetchWithRetry(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${this.config.apiToken}`
-                },
-                body: JSON.stringify(body)
-            });
-            // Check HTTP status
-            if (response.status === 401) {
-                throw new Error('Authentication failed: Invalid API token or token expired');
-            }
-            if (response.status === 403) {
-                throw new Error('Authorization failed: Token does not have permission to access this resource');
-            }
-            if (response.status === 404) {
-                throw new Error(`Test suite not found: ${testSuiteId}`);
-            }
-            if (response.status === 429) {
-                throw new Error('Rate limit exceeded. Please try again later');
-            }
-            if (response.status >= 500) {
-                throw new Error(`Server error (${response.status}): The Shiplight API is experiencing issues`);
-            }
-            // Try to parse JSON response
-            let data;
-            try {
-                const text = await response.text();
-                if (!text) {
-                    throw new Error('Empty response body');
-                }
-                data = JSON.parse(text);
-            }
-            catch (parseError) {
-                coreExports.debug(`[${timestamp()}][client.start] Failed to parse response: ${parseError}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                throw new Error('Invalid JSON response from API');
-            }
-            coreExports.debug(`[${timestamp()}][client.start] response: ` +
-                JSON.stringify(data, null, 2));
-            // Check for API-level errors
-            if (data?.success === false) {
-                throw new Error(data?.message || 'API request failed');
-            }
-            // Validate required fields
-            if (!data?.id || !data?.target) {
-                throw new Error('Invalid response: missing required fields (id or target)');
-            }
-            return {
-                name: data.target,
-                url: `${APP_URL}/run-results/${data.id}`,
-                runID: data.id
-            };
-        }
-        catch (error) {
-            // Log the full error for debugging
-            coreExports.debug(`[${timestamp()}][client.start] Error details: ${JSON.stringify(error)}`);
-            // Re-throw with more context
-            if (error instanceof Error) {
-                throw new Error(`Failed to start test suite ${testSuiteId}: ${error.message}`);
-            }
-            throw error;
-        }
-    }
-    async wait(config) {
-        const { testSuiteRunID: testRunId, timeout = MAX_WAIT_TIME } = config;
-        if (!testRunId) {
-            throw new Error('Test run ID is required');
-        }
-        const url = `${API_URL}/run-results/${testRunId}`;
-        const startTime = Date.now();
-        while (true) {
-            if (Date.now() - startTime > timeout) {
-                return {
-                    result: 'Timeout'
-                };
-            }
-            coreExports.debug(`[${timestamp()}][client.wait] request: ` +
-                JSON.stringify({
-                    method: 'GET',
-                    url,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ***'
-                    }
-                }, null, 2));
-            try {
-                const response = await fetchWithRetry(url, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${this.config.apiToken}`
-                    }
-                }, 2, 2000); // Fewer retries for polling, shorter initial delay
-                // Check HTTP status
-                if (response.status === 401) {
-                    throw new Error('Authentication failed: Invalid API token or token expired');
-                }
-                if (response.status === 403) {
-                    throw new Error('Authorization failed: Token does not have permission to access this resource');
-                }
-                if (response.status === 404) {
-                    throw new Error(`Test run not found: ${testRunId}`);
-                }
-                if (response.status === 429) {
-                    // For rate limiting during polling, wait longer before next attempt
-                    coreExports.debug(`[${timestamp()}][client.wait] Rate limited, waiting 30 seconds...`);
-                    await delay(30000);
-                    continue;
-                }
-                if (response.status >= 500) {
-                    // For server errors during polling, log but continue
-                    coreExports.warning(`Server error (${response.status}) while polling, will retry...`);
-                    await delay(POLL_INTERVAL * 2);
-                    continue;
-                }
-                // Try to parse JSON response
-                let data;
-                try {
-                    const text = await response.text();
-                    if (!text) {
-                        throw new Error('Empty response body');
-                    }
-                    data = JSON.parse(text);
-                }
-                catch (parseError) {
-                    coreExports.debug(`[${timestamp()}][client.wait] Failed to parse response: ${parseError}`);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    throw new Error('Invalid JSON response from API');
-                }
-                coreExports.debug(`[${timestamp()}][client.wait] response: ` +
-                    JSON.stringify(data, null, 2));
-                // Check for API-level errors
-                if (data?.success === false) {
-                    throw new Error(data?.message || 'API request failed');
-                }
-                // Check if test run is finished
-                if (data?.testRun?.status === 'Finished') {
-                    return data.testRun;
-                }
-                // Log current status
-                if (data?.testRun?.status) {
-                    coreExports.debug(`[${timestamp()}][client.wait] Test run status: ${data.testRun.status}`);
-                }
-            }
-            catch (error) {
-                // For polling, we want to be more resilient to transient errors
-                if (error instanceof Error) {
-                    // These are fatal errors that should stop polling
-                    if (error.message.includes('Authentication failed') ||
-                        error.message.includes('Authorization failed') ||
-                        error.message.includes('not found')) {
-                        throw error;
-                    }
-                    // Log other errors but continue polling
-                    coreExports.warning(`Error while polling (will continue): ${error.message}`);
-                }
-            }
-            await delay(POLL_INTERVAL);
-        }
-    }
-    async getDetailedResults(testRunID) {
-        if (!testRunID) {
-            throw new Error('Test run ID is required');
-        }
-        const url = `${API_URL}/run-results/${testRunID}`;
-        try {
-            const response = await fetchWithRetry(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${this.config.apiToken}`
-                }
-            });
-            if (response.status === 401) {
-                throw new Error('Authentication failed: Invalid API token or token expired');
-            }
-            if (response.status === 404) {
-                throw new Error(`Test run not found: ${testRunID}`);
-            }
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            const data = await response.json();
-            if (data?.success === false) {
-                throw new Error(data?.message || 'API request failed');
-            }
-            return data;
-        }
-        catch (error) {
-            coreExports.debug(`[${timestamp()}][client.getDetailedResults] Error: ${error}`);
-            throw error;
-        }
-    }
-}
 
 var github = {};
 
@@ -28743,7 +29313,7 @@ const createTokenAuth = function createTokenAuth2(token) {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$2 = "5.2.0";
+var VERSION$2 = "5.2.1";
 
 // pkg/dist-src/index.js
 var noop = () => {
@@ -31507,24 +32077,304 @@ function requireGithub () {
 
 var githubExports = requireGithub();
 
+// APP_URL is the base url for the shiplight app
+const APP_URL = process.env.SHIPLIGHT_APP_URL || 'https://app.shiplight.ai';
+// API_URL is the base url for the shiplight api server
+const API_URL = process.env.SHIPLIGHT_API_URL || 'https://api.shiplight.ai';
+// MAX_WAIT_TIME is the maximum time to wait for a test run to finish
+const MAX_WAIT_TIME = 24 * 60 * 60 * 1000; // 24 hours
+// POLL_INTERVAL is the interval to poll the test run status
+const POLL_INTERVAL = 10000; // 10 seconds
+
+const delay$1 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const timestamp$1 = () => new Date().toISOString().replace('T', ' ').substring(0, 19);
+async function fetchWithRetry(url, options, maxRetries = 3, retryDelay = 1000) {
+    let lastError = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            coreExports.debug(`[${timestamp$1()}][fetch] Attempt ${attempt}/${maxRetries} for ${url}`);
+            return await fetch(url, options);
+        }
+        catch (error) {
+            lastError = error;
+            coreExports.debug(`[${timestamp$1()}][fetch] Attempt ${attempt} failed: ${lastError.message}`);
+            if (attempt < maxRetries) {
+                const waitTime = retryDelay * Math.pow(2, attempt - 1);
+                coreExports.debug(`[${timestamp$1()}][fetch] Waiting ${waitTime}ms before retry...`);
+                await delay$1(waitTime);
+            }
+        }
+    }
+    throw new Error(`Failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
+}
+class Client {
+    config;
+    constructor(config) {
+        this.config = config;
+        if (!this.config.apiToken) {
+            throw new Error('API token is required');
+        }
+        const trimmedToken = this.config.apiToken.trim();
+        if (trimmedToken.length < 10) {
+            throw new Error('API token appears to be invalid (too short)');
+        }
+        this.config.apiToken = trimmedToken;
+    }
+    async requestStart(url, body, errorContext) {
+        coreExports.debug('[client.requestStart] request: ' +
+            JSON.stringify({
+                method: 'POST',
+                url,
+                body,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer ***'
+                }
+            }, null, 2));
+        const response = await fetchWithRetry(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${this.config.apiToken}`
+            },
+            body: JSON.stringify(body)
+        });
+        if (response.status === 401) {
+            throw new Error('Authentication failed: Invalid API token or token expired');
+        }
+        if (response.status === 403) {
+            throw new Error('Authorization failed: Token does not have permission to access this resource');
+        }
+        if (response.status === 404) {
+            throw new Error(`${errorContext} not found`);
+        }
+        if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again later');
+        }
+        if (response.status >= 500) {
+            throw new Error(`Server error (${response.status}): The Shiplight API is experiencing issues`);
+        }
+        let data;
+        try {
+            const text = await response.text();
+            if (!text) {
+                throw new Error('Empty response body');
+            }
+            data = JSON.parse(text);
+        }
+        catch (parseError) {
+            coreExports.debug(`[${timestamp$1()}][client.requestStart] Failed to parse response: ${parseError}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            throw new Error('Invalid JSON response from API');
+        }
+        coreExports.debug(`[${timestamp$1()}][client.requestStart] response: ` +
+            JSON.stringify(data, null, 2));
+        if (data?.success === false) {
+            throw new Error(data?.message || 'API request failed');
+        }
+        if (!data?.id || !data?.target) {
+            throw new Error('Invalid response: missing required fields (id or target)');
+        }
+        return {
+            name: data.target,
+            url: `${APP_URL}/run-results/${data.id}`,
+            runID: data.id
+        };
+    }
+    async start(config) {
+        const { testSuiteID: testSuiteId, environmentID, environmentURL } = config;
+        if (!testSuiteId) {
+            throw new Error('Test suite id is required');
+        }
+        try {
+            return await this.requestStart(`${API_URL}/v1/test-run/test-suite/${testSuiteId}`, {
+                environment: {
+                    id: environmentID,
+                    url: environmentURL
+                },
+                testContext: {},
+                trigger: this.config.trigger
+            }, `Test suite ${testSuiteId}`);
+        }
+        catch (error) {
+            coreExports.debug(`[${timestamp$1()}][client.start] Error details: ${JSON.stringify(error)}`);
+            if (error instanceof Error) {
+                throw new Error(`Failed to start test suite ${testSuiteId}: ${error.message}`);
+            }
+            throw error;
+        }
+    }
+    async startBatch(config) {
+        const { testSuiteIDs, environmentID, environmentURL, preflightTestCaseID, metadata } = config;
+        if (!testSuiteIDs || testSuiteIDs.length === 0) {
+            throw new Error('At least one test suite id is required');
+        }
+        const body = {
+            test_suite_ids: testSuiteIDs,
+            environment: {
+                id: environmentID,
+                url: environmentURL
+            },
+            testContext: {},
+            trigger: this.config.trigger
+        };
+        if (metadata && Object.keys(metadata).length > 0) {
+            body.metadata = metadata;
+        }
+        if (preflightTestCaseID !== undefined) {
+            body.preflight = {
+                testCaseId: preflightTestCaseID
+            };
+        }
+        try {
+            return await this.requestStart(`${API_URL}/v1/test-run`, body, 'Batch test run');
+        }
+        catch (error) {
+            coreExports.debug(`[${timestamp$1()}][client.startBatch] Error details: ${JSON.stringify(error)}`);
+            if (error instanceof Error) {
+                throw new Error(`Failed to start batch test run: ${error.message}`);
+            }
+            throw error;
+        }
+    }
+    async wait(config) {
+        const { testSuiteRunID: testRunId, timeout = MAX_WAIT_TIME } = config;
+        if (!testRunId) {
+            throw new Error('Test run ID is required');
+        }
+        const url = `${API_URL}/run-results/${testRunId}`;
+        const startTime = Date.now();
+        while (true) {
+            if (Date.now() - startTime > timeout) {
+                return {
+                    result: 'Timeout'
+                };
+            }
+            coreExports.debug(`[${timestamp$1()}][client.wait] request: ` +
+                JSON.stringify({
+                    method: 'GET',
+                    url,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ***'
+                    }
+                }, null, 2));
+            try {
+                const response = await fetchWithRetry(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${this.config.apiToken}`
+                    }
+                }, 2, 2000);
+                if (response.status === 401) {
+                    throw new Error('Authentication failed: Invalid API token or token expired');
+                }
+                if (response.status === 403) {
+                    throw new Error('Authorization failed: Token does not have permission to access this resource');
+                }
+                if (response.status === 404) {
+                    throw new Error(`Test run not found: ${testRunId}`);
+                }
+                if (response.status === 429) {
+                    coreExports.debug(`[${timestamp$1()}][client.wait] Rate limited, waiting 30 seconds...`);
+                    await delay$1(30000);
+                    continue;
+                }
+                if (response.status >= 500) {
+                    coreExports.warning(`Server error (${response.status}) while polling, will retry...`);
+                    await delay$1(POLL_INTERVAL * 2);
+                    continue;
+                }
+                let data;
+                try {
+                    const text = await response.text();
+                    if (!text) {
+                        throw new Error('Empty response body');
+                    }
+                    data = JSON.parse(text);
+                }
+                catch (parseError) {
+                    coreExports.debug(`[${timestamp$1()}][client.wait] Failed to parse response: ${parseError}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    throw new Error('Invalid JSON response from API');
+                }
+                coreExports.debug(`[${timestamp$1()}][client.wait] response: ` + JSON.stringify(data, null, 2));
+                if (data?.success === false) {
+                    throw new Error(data?.message || 'API request failed');
+                }
+                if (data?.testRun?.status === 'Finished') {
+                    return data.testRun;
+                }
+                if (data?.testRun?.status) {
+                    coreExports.debug(`[${timestamp$1()}][client.wait] Test run status: ${data.testRun.status}`);
+                }
+            }
+            catch (error) {
+                if (error instanceof Error) {
+                    if (error.message.includes('Authentication failed') ||
+                        error.message.includes('Authorization failed') ||
+                        error.message.includes('not found')) {
+                        throw error;
+                    }
+                    coreExports.warning(`Error while polling (will continue): ${error.message}`);
+                }
+            }
+            await delay$1(POLL_INTERVAL);
+        }
+    }
+    async getDetailedResults(testRunID) {
+        if (!testRunID) {
+            throw new Error('Test run ID is required');
+        }
+        const url = `${API_URL}/run-results/${testRunID}`;
+        try {
+            const response = await fetchWithRetry(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${this.config.apiToken}`
+                }
+            });
+            if (response.status === 401) {
+                throw new Error('Authentication failed: Invalid API token or token expired');
+            }
+            if (response.status === 404) {
+                throw new Error(`Test run not found: ${testRunID}`);
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const data = (await response.json());
+            if (data?.success === false) {
+                throw new Error(data?.message || 'API request failed');
+            }
+            return data;
+        }
+        catch (error) {
+            coreExports.debug(`[${timestamp$1()}][client.getDetailedResults] Error: ${error}`);
+            throw error;
+        }
+    }
+}
+
 const resultEmoji = {
     Pending: '🔄',
     Passed: '✅',
     Failed: '❌',
     Skipped: '⏭️'
 };
-/**
- * Extract failure summary from test case report when summary is null
- */
 function extractFailureSummary(testCase) {
     if (testCase.summary) {
         return testCase.summary;
     }
-    // Try to extract from report
     if (testCase.report && testCase.report.length > 0) {
         const report = testCase.report[0];
         if (report.resultJson) {
-            // Find the first failed step
             for (const [stepKey, stepData] of Object.entries(report.resultJson)) {
                 if (stepData.status === 'failure' && stepData.message) {
                     const stepDesc = stepData.description || stepKey;
@@ -31541,52 +32391,42 @@ class Github {
         this.core = githubExports.getOctokit(config.token);
     }
     async comment(config) {
-        // core.info(`config: ${JSON.stringify(config)}`)
         let issue_number = githubExports.context.payload.pull_request?.number;
-        if (!issue_number) {
-            if (config.commitSHA) {
-                const { data: pull_requests } = await this.core.rest.repos.listPullRequestsAssociatedWithCommit({
-                    owner: githubExports.context.repo.owner,
-                    repo: githubExports.context.repo.repo,
-                    commit_sha: config.commitSHA
-                });
-                // core.info(`pull_requests: ${JSON.stringify(pull_requests)}`)
-                // Filter for open pull requests
-                const openPRs = pull_requests.filter((pr) => pr.state === 'open');
-                if (openPRs.length > 0) {
-                    issue_number = openPRs[0].number;
-                }
+        if (!issue_number && config.commitSHA) {
+            const { data: pull_requests } = await this.core.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: githubExports.context.repo.owner,
+                repo: githubExports.context.repo.repo,
+                commit_sha: config.commitSHA
+            });
+            const openPRs = pull_requests.filter((pr) => pr.state === 'open');
+            if (openPRs.length > 0) {
+                issue_number = openPRs[0].number;
             }
         }
         coreExports.info(`issue_number: ${issue_number}`);
-        // ignore if the pull request is not a PR
         if (!issue_number) {
             return;
         }
         const commentIdentifier = `<!-- shiplight_tests ${config.identifier} -->`;
-        // Generate table rows for all test suites
+        const firstRunId = config.testSuites.find((suite) => suite.testSuiteRun?.id)?.testSuiteRun?.id;
         const tableRows = config.testSuites
             .map((suite) => {
             const testSuiteURL = `${APP_URL}/test-suites/${suite.testSuiteID}`;
             const runId = suite.testSuiteRun?.id;
-            // Simple check: runId exists and is not 0 or empty
             const hasValidRunId = runId && runId !== 0 && String(runId) !== '';
-            // Log for debugging
             coreExports.debug(`Suite: ${suite.testSuiteName}, runId: ${runId} (type: ${typeof runId}), hasValidRunId: ${hasValidRunId}`);
             const name = `[${suite.testSuiteName}](${testSuiteURL})`;
-            // Build result column with pass/fail counts
             const passedCount = suite.testSuiteRun?.passedTestCaseCount || 0;
             const totalCount = suite.testSuiteRun?.totalTestCaseCount || 0;
             let result;
             if (hasValidRunId) {
                 const testSuiteRunResultURL = `${APP_URL}/run-results/${runId}`;
                 const counts = totalCount > 0 ? ` (${passedCount}/${totalCount} passed)` : '';
-                result = `${resultEmoji[suite.testSuiteRun?.result]} ${suite.testSuiteRun?.result}${counts} [Inspect](${testSuiteRunResultURL})`;
+                result = `${resultEmoji[suite.testSuiteRun?.result] || ''} ${suite.testSuiteRun?.result}${counts} [Inspect](${testSuiteRunResultURL})`;
             }
             else {
-                // For cases without valid run IDs, don't show inspect link
                 const resultText = suite.testSuiteRun?.result || 'Failed';
-                result = `${resultEmoji[resultText]} ${resultText}`;
+                result = `${resultEmoji[resultText] || ''} ${resultText}`;
             }
             const startTime = suite.testSuiteRun?.startTime
                 ? new Date(suite.testSuiteRun.startTime).toLocaleString('en-US', {
@@ -31601,7 +32441,6 @@ class Github {
             return `| ${name} | ${result} | ${startTime} | ${endTime} |`;
         })
             .join('\n');
-        // Generate failure details section (after the table)
         const failureSections = config.testSuites
             .filter((suite) => {
             const failedCount = suite.testSuiteRun?.failedTestCaseCount || 0;
@@ -31628,11 +32467,19 @@ ${failureList}
         })
             .filter(Boolean)
             .join('\n\n');
+        const preflightSection = config.preflightTestCaseId !== undefined
+            ? `\n## Preflight Gate\n\n- Test Case: ${firstRunId
+                ? `[#${config.preflightTestCaseId}](${APP_URL}/run-results/${firstRunId}/test/${config.preflightTestCaseId}/overview)`
+                : `#${config.preflightTestCaseId}`}\n- Result: ${resultEmoji[config.preflightResult || 'Pending'] || 'ℹ️'} ${config.preflightResult || 'Pending'}\n`
+            : '';
         const failureSection = failureSections
             ? `\n## ❌ Failed Tests\n\n${failureSections}\n`
             : '';
         const body = `${commentIdentifier}
 # [Shiplight](https://app.shiplight.ai) Runner
+
+${preflightSection}
+## Main Test Suites
 
 | Name | Result | Start Time (UTC) | End Time (UTC) |
 | :--- | :----- | :------ | :------ |
@@ -31641,7 +32488,6 @@ ${failureSection}
 ---
 _This comment was automatically generated by [Shiplight GitHub Action](https://github.com/marketplace/actions/shiplight-runner)_
 `;
-        // check if the comment already exists
         const comments = await this.core.rest.issues.listComments({
             owner: githubExports.context.repo.owner,
             repo: githubExports.context.repo.repo,
@@ -31649,7 +32495,6 @@ _This comment was automatically generated by [Shiplight GitHub Action](https://g
         });
         const commit = comments.data.find((comment) => comment.body?.startsWith(commentIdentifier));
         if (commit?.id) {
-            // update the comment
             await this.core.rest.issues.updateComment({
                 owner: githubExports.context.repo.owner,
                 repo: githubExports.context.repo.repo,
@@ -31658,7 +32503,6 @@ _This comment was automatically generated by [Shiplight GitHub Action](https://g
             });
         }
         else {
-            // create a new comment
             await this.core.rest.issues.createComment({
                 owner: githubExports.context.repo.owner,
                 repo: githubExports.context.repo.repo,
@@ -31669,18 +32513,88 @@ _This comment was automatically generated by [Shiplight GitHub Action](https://g
     }
 }
 
-/**
- * The main function for the action.
- *
- * @returns Resolves when the action is complete.
- */
+const timestamp = () => new Date().toISOString().replace('T', ' ').substring(0, 19);
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const normalizeToNumber = (value, fieldName) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+        throw new Error(`${fieldName} must be a number, got: ${value}`);
+    }
+    return parsed;
+};
+const parseTestSuiteIDs = (raw) => {
+    const parts = raw
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0);
+    if (parts.length === 0) {
+        throw new Error('At least one test suite ID is required');
+    }
+    return parts.map((id) => normalizeToNumber(id, 'test-suite-id'));
+};
+const buildGithubMetadata = (commitSHAInput) => {
+    const pullRequest = githubExports.context.payload.pull_request;
+    const commitSHA = commitSHAInput || process.env.GITHUB_SHA || githubExports.context.sha;
+    const headCommitMessage = githubExports.context.payload.head_commit?.message;
+    const normalizedCommitMessage = typeof headCommitMessage === 'string' && headCommitMessage.trim().length > 0
+        ? headCommitMessage.trim()
+        : undefined;
+    const commitTitle = normalizedCommitMessage?.split('\n')[0];
+    return {
+        source: 'github_action',
+        repository: process.env.GITHUB_REPOSITORY,
+        workflow: process.env.GITHUB_WORKFLOW,
+        workflowRunId: process.env.GITHUB_RUN_ID,
+        workflowRunNumber: process.env.GITHUB_RUN_NUMBER,
+        job: process.env.GITHUB_JOB,
+        actor: process.env.GITHUB_ACTOR,
+        eventName: process.env.GITHUB_EVENT_NAME,
+        ref: process.env.GITHUB_REF,
+        sha: commitSHA,
+        pullRequestId: pullRequest?.number ? String(pullRequest.number) : undefined,
+        pullRequestTitle: pullRequest?.title,
+        pullRequestUrl: pullRequest?.html_url,
+        commitName: commitTitle,
+        commitTitle,
+        commitMessage: normalizedCommitMessage
+    };
+};
+const derivePreflightResult = (run, testCaseResults) => {
+    if (!run.preflightTestCaseId) {
+        return 'Skipped';
+    }
+    const preflightResult = testCaseResults?.find((item) => item.id === run.preflightTestCaseResultId) ||
+        testCaseResults?.find((item) => item.type?.toLowerCase() === 'preflight' || item.testCaseId === run.preflightTestCaseId);
+    if (!preflightResult?.result) {
+        return 'Pending';
+    }
+    return preflightResult.result;
+};
+const toCommentSuiteRun = (runId, suiteResult, fallbackRun, forceResult) => {
+    const result = forceResult || suiteResult?.result || fallbackRun.result;
+    return {
+        id: runId,
+        status: suiteResult?.status || fallbackRun.status,
+        result,
+        duration: suiteResult?.duration || '',
+        failedTestCaseCount: suiteResult?.failedTestCaseCount ?? 0,
+        passedTestCaseCount: suiteResult?.passedTestCaseCount ?? 0,
+        totalTestCaseCount: suiteResult?.totalTestCaseCount ?? 0,
+        createdAt: fallbackRun.createdAt,
+        startTime: suiteResult?.startTime,
+        endTime: suiteResult?.endTime,
+        preflightTestCaseId: fallbackRun.preflightTestCaseId,
+        preflightTestCaseResultId: fallbackRun.preflightTestCaseResultId
+    };
+};
+const buildCommentStateSignature = (params) => JSON.stringify({
+    runStatus: params.runStatus || '',
+    runResult: params.runResult || '',
+    preflightResult: params.preflightResult,
+    suites: params.suites
+});
 async function run() {
     try {
-        // process.env['INPUT_API-TOKEN'] = process.env.API_TOKEN || ''
-        // process.env['INPUT_TEST-SUITE-ID'] = process.env.TEST_SUITE_ID || ''
-        // process.env['INPUT_ENVIRONMENT-URL'] = process.env.TEST_SUITE_ENVIRONMENT_URL || ''
-        // S1. prepare
-        const timestamp = () => new Date().toISOString().replace('T', ' ').substring(0, 19);
         coreExports.info(`[${timestamp()}][shiplight] prepare ...`);
         const apiToken = coreExports.getInput('api-token');
         const testSuiteIDInput = coreExports.getInput('test-suite-id');
@@ -31688,29 +32602,14 @@ async function run() {
         const environmentURL = coreExports.getInput('environment-url');
         const githubComment = coreExports.getInput('github-comment') === 'true';
         const githubToken = coreExports.getInput('github-token');
-        const async = coreExports.getInput('async') === 'true';
-        const commitSHA = coreExports.getInput('commit-sha');
+        const asyncMode = coreExports.getInput('async') === 'true';
+        const commitSHAInput = coreExports.getInput('commit-sha');
         const timeoutSecondsInput = coreExports.getInput('timeout-seconds');
+        const preflightTestCaseIdInput = coreExports.getInput('preflight-test-case-id');
         const timeoutSeconds = timeoutSecondsInput
             ? parseInt(timeoutSecondsInput, 10)
             : MAX_WAIT_TIME / 1000;
         const timeout = timeoutSeconds * 1000;
-        // Generate unique identifier based on environment and test suites
-        const environmentIDSafe = environmentID || 'default-env';
-        const testSuiteIDSafe = testSuiteIDInput
-            .replace(/[^a-zA-Z0-9,-]/g, '')
-            .replace(/,/g, '_');
-        const runIdentifier = `${environmentIDSafe}-${testSuiteIDSafe}`;
-        // Parse test suite IDs (supports single ID or comma-separated list for backward compatibility)
-        const testSuiteIDs = testSuiteIDInput
-            .split(',')
-            .map((id) => id.trim())
-            .filter((id) => id.length > 0);
-        let environmentIDNumber = undefined;
-        if (!isNaN(+environmentID)) {
-            environmentIDNumber = +environmentID;
-        }
-        // Validate API token
         const trimmedApiToken = apiToken.trim();
         if (!trimmedApiToken) {
             throw new Error('API token is required but was not provided');
@@ -31718,212 +32617,215 @@ async function run() {
         if (trimmedApiToken.length < 10) {
             throw new Error('API token appears to be invalid (too short)');
         }
-        // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        coreExports.debug(`apiToken: ${trimmedApiToken.substring(0, 8)}...${trimmedApiToken.length > 8 ? '***' : ''}`);
-        coreExports.info(`apiToken: ${trimmedApiToken ? '***' : 'not provided'}`);
+        const testSuiteIDs = parseTestSuiteIDs(testSuiteIDInput);
+        const environmentIDNumber = environmentID
+            ? normalizeToNumber(environmentID, 'environment-id')
+            : undefined;
+        const preflightTestCaseID = preflightTestCaseIdInput
+            ? normalizeToNumber(preflightTestCaseIdInput, 'preflight-test-case-id')
+            : undefined;
+        const metadata = buildGithubMetadata(commitSHAInput);
+        const commitSHA = commitSHAInput || (typeof metadata.sha === 'string' ? metadata.sha : '');
+        const environmentIDSafe = environmentID || 'default-env';
+        const runIdentifier = `${environmentIDSafe}-${testSuiteIDs.join('_')}`;
         coreExports.info(`testSuiteIds: ${JSON.stringify(testSuiteIDs)}`);
         coreExports.info(`testSuiteEnvironmentURL: ${environmentURL}`);
         coreExports.info(`githubComment: ${githubComment}`);
-        coreExports.info(`githubToken: ${githubToken}`);
-        coreExports.info(`async: ${async}`);
+        coreExports.info(`async: ${asyncMode}`);
         coreExports.info(`timeoutSeconds: ${timeoutSeconds}`);
-        coreExports.info(`timeout: ${timeout}`);
-        coreExports.info(`environmentID: ${environmentID} -> safe: ${environmentIDSafe}`);
-        coreExports.info(`testSuiteIDInput: ${testSuiteIDInput} -> safe: ${testSuiteIDSafe}`);
-        coreExports.info(`runIdentifier: ${runIdentifier} (environmentID-testSuiteIDInput)`);
-        if (testSuiteIDs.length === 0) {
-            throw new Error('At least one test suite ID is required');
-        }
-        // client
+        coreExports.info(`preflightTestCaseID: ${preflightTestCaseID ?? 'none'}`);
         const client = new Client({
             apiToken: trimmedApiToken,
             trigger: 'GITHUB_ACTION'
         });
-        // github
-        const github = new Github({
-            token: githubToken
+        const github = new Github({ token: githubToken });
+        coreExports.info(`[${timestamp()}][shiplight] starting single test run ...`);
+        const startedRun = await client.startBatch({
+            testSuiteIDs,
+            environmentID: environmentIDNumber,
+            environmentURL,
+            preflightTestCaseID,
+            metadata
         });
-        // S2. start all test runs in parallel
-        coreExports.info(`[${timestamp()}][shiplight] starting ${testSuiteIDs.length} test runs in parallel ...`);
-        const testRunPromises = testSuiteIDs.map(async (testSuiteID) => {
-            try {
-                const { name, url, runID } = await client.start({
-                    testSuiteID,
-                    environmentID: environmentIDNumber,
-                    environmentURL
-                });
-                return {
-                    testSuiteID,
-                    name,
-                    url,
-                    runID,
-                    error: null
-                };
-            }
-            catch (error) {
-                coreExports.warning(`Failed to start test suite ${testSuiteID}: ${error.message}`);
-                return {
-                    testSuiteID,
-                    name: `Test Suite ${testSuiteID}`,
-                    url: '',
-                    runID: 0,
-                    error: error.message
-                };
-            }
-        });
-        const testRuns = await Promise.all(testRunPromises);
-        // S2.1 if async is true, return
-        if (async) {
-            coreExports.info(`[${timestamp()}][shiplight] async mode is enabled, ignore wait for the test runs to finish and no comment on the pull request`);
+        coreExports.setOutput('run-id', startedRun.runID);
+        coreExports.setOutput('run-url', startedRun.url);
+        coreExports.setOutput('metadata', JSON.stringify(metadata));
+        if (asyncMode) {
+            coreExports.info(`[${timestamp()}][shiplight] async mode is enabled, skip waiting and commenting`);
+            coreExports.setOutput('success', true);
+            coreExports.setOutput('results', JSON.stringify(testSuiteIDs.map((suiteID) => ({
+                testSuiteID: String(suiteID),
+                name: `Test Suite ${suiteID}`,
+                result: 'Pending',
+                url: startedRun.url,
+                error: null
+            }))));
+            coreExports.setOutput('preflight-result', preflightTestCaseID !== undefined ? 'Pending' : 'Skipped');
             return;
         }
-        // S3. comment on the pull request with initial pending status
-        coreExports.info(`[${timestamp()}][shiplight] posting initial comment on the pull request ...`);
+        const initialCommentSuites = testSuiteIDs.map((suiteID) => ({
+            testSuiteID: String(suiteID),
+            testSuiteName: `Test Suite ${suiteID}`,
+            testSuiteRun: toCommentSuiteRun(startedRun.runID, undefined, {
+                id: startedRun.runID,
+                status: 'Pending',
+                result: 'Pending',
+                duration: '',
+                failedTestCaseCount: 0,
+                passedTestCaseCount: 0,
+                totalTestCaseCount: 0,
+                createdAt: new Date().toISOString(),
+                startTime: undefined,
+                endTime: undefined,
+                preflightTestCaseId: preflightTestCaseID,
+                preflightTestCaseResultId: undefined
+            })
+        }));
+        let lastCommentSignature = buildCommentStateSignature({
+            runStatus: 'Pending',
+            runResult: 'Pending',
+            preflightResult: preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
+            suites: initialCommentSuites.map((suite) => ({
+                testSuiteID: suite.testSuiteID,
+                status: suite.testSuiteRun.status,
+                result: suite.testSuiteRun.result,
+                startTime: suite.testSuiteRun.startTime,
+                endTime: suite.testSuiteRun.endTime,
+                failedCount: suite.testSuiteRun.failedTestCaseCount,
+                passedCount: suite.testSuiteRun.passedTestCaseCount,
+                totalCount: suite.testSuiteRun.totalTestCaseCount
+            }))
+        });
         if (githubComment) {
             try {
-                const testSuites = testRuns.map((testRun) => ({
-                    testSuiteID: testRun.testSuiteID,
-                    testSuiteName: testRun.name,
-                    testSuiteRun: testRun.error || testRun.runID === 0
-                        ? {
-                            id: '',
-                            result: 'Failed',
-                            startTime: new Date().toISOString(),
-                            endTime: new Date().toISOString()
-                        }
-                        : {
-                            id: testRun.runID,
-                            result: 'Pending'
-                        }
-                }));
                 await github.comment({
                     identifier: runIdentifier,
                     commitSHA,
-                    testSuites
+                    preflightResult: preflightTestCaseID !== undefined ? 'Pending' : 'Skipped',
+                    preflightTestCaseId: preflightTestCaseID,
+                    testSuites: initialCommentSuites
                 });
             }
             catch (error) {
-                coreExports.warning(`Failed to comment on pull request: ${error.message}`);
+                coreExports.warning(`Failed to comment on pull request: ${error instanceof Error ? error.message : String(error)}`);
             }
         }
-        // S3.1 wait for all test runs to finish in parallel
-        coreExports.info(`[${timestamp()}][shiplight] waiting for all test runs to finish ...`);
-        const waitPromises = testRuns.map(async (testRun) => {
-            if (testRun.error || testRun.runID === 0) {
-                return {
-                    testSuiteID: testRun.testSuiteID,
-                    name: testRun.name,
-                    url: testRun.url,
-                    result: {
-                        ...(testRun.runID > 0 && { id: testRun.runID }), // Only include ID if valid
-                        result: 'Failed',
-                        startTime: new Date().toISOString(),
-                        endTime: new Date().toISOString()
-                    },
-                    error: testRun.error
-                };
+        coreExports.info(`[${timestamp()}][shiplight] polling test run and updating comment on state changes ...`);
+        const pollingStartTime = Date.now();
+        let lastDetailedRun = await client.getDetailedResults(startedRun.runID);
+        while (true) {
+            if (Date.now() - pollingStartTime > timeout) {
+                coreExports.setOutput('success', false);
+                coreExports.setOutput('preflight-result', preflightTestCaseID ? 'Pending' : 'Skipped');
+                coreExports.setOutput('results', JSON.stringify(testSuiteIDs.map((suiteID) => ({
+                    testSuiteID: String(suiteID),
+                    name: `Test Suite ${suiteID}`,
+                    result: 'Failed',
+                    url: startedRun.url,
+                    error: `Timeout after ${timeoutSeconds} seconds`
+                }))));
+                coreExports.setFailed(`Test run timed out after ${timeoutSeconds} seconds`);
+                return;
             }
-            try {
-                const result = await client.wait({
-                    testSuiteRunID: testRun.runID,
-                    timeout
-                });
+            const testRun = lastDetailedRun.testRun;
+            const testSuiteResults = lastDetailedRun.testSuiteResults || [];
+            const testCaseResults = lastDetailedRun.testCaseResults || [];
+            const suiteResultMap = new Map();
+            for (const suiteResult of testSuiteResults) {
+                if (suiteResult.testSuiteId !== undefined) {
+                    suiteResultMap.set(suiteResult.testSuiteId, suiteResult);
+                }
+            }
+            const finalResults = testSuiteIDs.map((suiteID) => {
+                const suiteResult = suiteResultMap.get(suiteID);
+                const result = suiteResult?.result || testRun.result || 'Failed';
                 return {
-                    testSuiteID: testRun.testSuiteID,
-                    name: testRun.name,
-                    url: testRun.url,
+                    testSuiteID: String(suiteID),
+                    name: `Test Suite ${suiteID}`,
+                    url: startedRun.url,
                     result,
-                    error: null
+                    error: null,
+                    suiteResult
                 };
-            }
-            catch (error) {
-                coreExports.warning(`Failed to wait for test suite ${testRun.testSuiteID}: ${error.message}`);
+            });
+            const preflightResult = derivePreflightResult(testRun, testCaseResults);
+            coreExports.setOutput('preflight-result', preflightResult);
+            const commentSuites = finalResults.map((finalResult) => {
+                const suiteResultId = finalResult.suiteResult?.id;
+                const suiteTestCaseResults = suiteResultId
+                    ? testCaseResults.filter((testCaseResult) => testCaseResult.testSuiteResultId === suiteResultId &&
+                        testCaseResult.result === 'Failed')
+                    : [];
                 return {
-                    testSuiteID: testRun.testSuiteID,
-                    name: testRun.name,
-                    url: testRun.url,
-                    result: {
-                        id: testRun.runID, // Preserve the original run ID from the successful start
-                        result: 'Failed',
-                        startTime: new Date().toISOString(),
-                        endTime: new Date().toISOString()
-                    },
-                    error: error.message
-                };
-            }
-        });
-        const finalResults = await Promise.all(waitPromises);
-        // S3.2 Fetch detailed results for failed suite runs
-        coreExports.info(`[${timestamp()}][shiplight] fetching detailed results for failed runs ...`);
-        const detailedResultsPromises = finalResults.map(async (finalResult) => {
-            // Only fetch detailed results for failed runs
-            if (finalResult.result.result === 'Failed' && finalResult.result.id) {
-                try {
-                    const detailedData = await client.getDetailedResults(finalResult.result.id);
-                    return {
-                        ...finalResult,
-                        testCaseResults: detailedData.testCaseResults || []
-                    };
-                }
-                catch (error) {
-                    coreExports.warning(`Failed to fetch detailed results for run ${finalResult.result.id}: ${error.message}`);
-                    return finalResult;
-                }
-            }
-            return finalResult;
-        });
-        const finalResultsWithDetails = await Promise.all(detailedResultsPromises);
-        // S3.3 update comment with final results
-        coreExports.info(`[${timestamp()}][shiplight] updating comment with final results ...`);
-        if (githubComment) {
-            try {
-                const testSuites = finalResultsWithDetails.map((finalResult) => ({
                     testSuiteID: finalResult.testSuiteID,
                     testSuiteName: finalResult.name,
-                    testSuiteRun: finalResult.result,
-                    testCaseResults: finalResult.testCaseResults
-                }));
-                await github.comment({
-                    identifier: runIdentifier,
-                    commitSHA,
-                    testSuites
-                });
+                    testSuiteRun: toCommentSuiteRun(startedRun.runID, finalResult.suiteResult, testRun, finalResult.result),
+                    testCaseResults: suiteTestCaseResults
+                };
+            });
+            const currentCommentSignature = buildCommentStateSignature({
+                runStatus: testRun.status,
+                runResult: testRun.result,
+                preflightResult,
+                suites: commentSuites.map((suite) => ({
+                    testSuiteID: suite.testSuiteID,
+                    status: suite.testSuiteRun.status,
+                    result: suite.testSuiteRun.result,
+                    startTime: suite.testSuiteRun.startTime,
+                    endTime: suite.testSuiteRun.endTime,
+                    failedCount: suite.testSuiteRun.failedTestCaseCount,
+                    passedCount: suite.testSuiteRun.passedTestCaseCount,
+                    totalCount: suite.testSuiteRun.totalTestCaseCount
+                }))
+            });
+            if (githubComment && currentCommentSignature !== lastCommentSignature) {
+                try {
+                    await github.comment({
+                        identifier: runIdentifier,
+                        commitSHA,
+                        preflightResult,
+                        preflightTestCaseId: testRun.preflightTestCaseId,
+                        testSuites: commentSuites
+                    });
+                    lastCommentSignature = currentCommentSignature;
+                }
+                catch (error) {
+                    coreExports.warning(`Failed to update comment on pull request: ${error instanceof Error ? error.message : String(error)}`);
+                }
+            }
+            if (testRun.status === 'Finished') {
+                const failedResults = finalResults.filter((result) => result.result === 'Failed');
+                const allSuccessful = failedResults.length === 0;
+                coreExports.setOutput('success', allSuccessful);
+                coreExports.setOutput('results', JSON.stringify(finalResults.map((result) => ({
+                    testSuiteID: result.testSuiteID,
+                    name: result.name,
+                    result: result.result,
+                    url: result.url,
+                    error: result.error
+                }))));
+                if (!allSuccessful) {
+                    coreExports.setFailed(`${failedResults.length} out of ${finalResults.length} test suites failed in run ${startedRun.runID}`);
+                }
+                return;
+            }
+            await delay(POLL_INTERVAL);
+            try {
+                lastDetailedRun = await client.getDetailedResults(startedRun.runID);
             }
             catch (error) {
-                coreExports.warning(`Failed to update comment on pull request: ${error.message}`);
+                coreExports.warning(`Polling run details failed (will retry): ${error instanceof Error ? error.message : String(error)}`);
             }
-        }
-        // Log results for each test suite
-        finalResults.forEach((finalResult) => {
-            coreExports.info(`[${timestamp()}][shiplight] Test suite: ${finalResult.name} (${finalResult.testSuiteID})`);
-            coreExports.info(`[${timestamp()}][shiplight] Result: ${finalResult.result.result}`);
-            coreExports.info(`[${timestamp()}][shiplight] Details: ${finalResult.url}`);
-            if (finalResult.error) {
-                coreExports.info(`[${timestamp()}][shiplight] Error: ${finalResult.error}`);
-            }
-        });
-        // Determine overall success
-        const failedResults = finalResults.filter((result) => result.result.result === 'Failed');
-        const allSuccessful = failedResults.length === 0;
-        // Set outputs
-        coreExports.setOutput('success', allSuccessful);
-        coreExports.setOutput('results', JSON.stringify(finalResults.map((result) => ({
-            testSuiteID: result.testSuiteID,
-            name: result.name,
-            result: result.result.result,
-            url: result.url,
-            error: result.error
-        }))));
-        if (!allSuccessful) {
-            coreExports.setFailed(`${failedResults.length} out of ${finalResults.length} test runs failed`);
         }
     }
     catch (error) {
-        // Fail the workflow run if an error occurs
         if (error instanceof Error) {
             coreExports.setOutput('success', false);
             coreExports.setFailed(error.message);
+            return;
         }
+        coreExports.setOutput('success', false);
+        coreExports.setFailed(String(error));
     }
 }
 
