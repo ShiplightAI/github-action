@@ -140,6 +140,80 @@ const buildCommentStateSignature = (params: {
     suites: params.suites
   })
 
+const logSuiteStates = (params: {
+  runStatus?: string
+  runResult?: string
+  runURL: string
+  preflightTestCaseID?: number
+  preflightResult?: TestRunResult | 'Skipped' | 'Pending'
+  suites: Array<{
+    testSuiteID: string
+    testSuiteRun: TestRun
+  }>
+}): void => {
+  core.info(
+    `[${timestamp()}][shiplight] Run status: ${params.runStatus || 'Unknown'}, result: ${params.runResult || 'Unknown'}, details: ${params.runURL}`
+  )
+
+  if (params.preflightTestCaseID) {
+    core.info(
+      `[${timestamp()}][shiplight] Preflight test: ${params.preflightTestCaseID}, result: ${params.preflightResult || 'Pending'}`
+    )
+  }
+
+  params.suites.forEach((suite) => {
+    const suiteRun = suite.testSuiteRun
+    const counts =
+      suiteRun.totalTestCaseCount > 0
+        ? `, passed: ${suiteRun.passedTestCaseCount}, failed: ${suiteRun.failedTestCaseCount}, total: ${suiteRun.totalTestCaseCount}`
+        : ''
+
+    core.info(
+      `[${timestamp()}][shiplight] Test suite ${suite.testSuiteID} status: ${suiteRun.status}, result: ${suiteRun.result}${counts}`
+    )
+  })
+}
+
+const logFinalResults = (params: {
+  runID: number
+  runStatus?: string
+  runResult?: string
+  runURL: string
+  preflightTestCaseID?: number
+  preflightResult?: TestRunResult | 'Skipped' | 'Pending'
+  results: Array<{
+    testSuiteID: string
+    name: string
+    result: TestRunResult
+    url: string
+    error: string | null
+    suiteResult?: TestSuiteResult
+  }>
+}): void => {
+  if (params.preflightTestCaseID) {
+    core.info(
+      `[${timestamp()}][shiplight] Preflight test: ${params.preflightTestCaseID}, result: ${params.preflightResult || 'Pending'}`
+    )
+  }
+
+  params.results.forEach((result) => {
+    const counts =
+      result.suiteResult?.totalTestCaseCount &&
+      result.suiteResult.totalTestCaseCount > 0
+        ? `, passed: ${result.suiteResult.passedTestCaseCount ?? 0}, failed: ${result.suiteResult.failedTestCaseCount ?? 0}, total: ${result.suiteResult.totalTestCaseCount}`
+        : ''
+
+    core.info(
+      `[${timestamp()}][shiplight] Test suite: ${result.name} (${result.testSuiteID})`
+    )
+    core.info(`[${timestamp()}][shiplight] Result: ${result.result}${counts}`)
+    if (result.error) {
+      core.info(`[${timestamp()}][shiplight] Error: ${result.error}`)
+    }
+  })
+  core.info(`[${timestamp()}][shiplight] Details: ${params.runURL}`)
+}
+
 export async function run(): Promise<void> {
   try {
     core.info(`[${timestamp()}][shiplight] prepare ...`)
@@ -200,6 +274,7 @@ export async function run(): Promise<void> {
       if (Object.keys(testContext).length === 0) {
         testContext = undefined
       }
+      core.info(`testContext: ${JSON.stringify(testContext)}`)
     }
 
     const metadata = buildGithubMetadata(commitSHAInput)
@@ -233,6 +308,9 @@ export async function run(): Promise<void> {
       metadata,
       testContext
     })
+    core.info(
+      `[${timestamp()}][shiplight] Started run ${startedRun.runID}, details: ${startedRun.url}`
+    )
 
     core.setOutput('run-id', startedRun.runID)
     core.setOutput('run-url', startedRun.url)
@@ -410,6 +488,20 @@ export async function run(): Promise<void> {
         }))
       })
 
+      if (currentCommentSignature !== lastCommentSignature) {
+        logSuiteStates({
+          runStatus: testRun.status,
+          runResult: testRun.result,
+          runURL: startedRun.url,
+          preflightTestCaseID: testRun.preflightTestCaseId,
+          preflightResult,
+          suites: commentSuites.map((suite) => ({
+            testSuiteID: suite.testSuiteID,
+            testSuiteRun: suite.testSuiteRun
+          }))
+        })
+      }
+
       if (githubComment && currentCommentSignature !== lastCommentSignature) {
         try {
           await github.comment({
@@ -432,6 +524,15 @@ export async function run(): Promise<void> {
           (result) => result.result === 'Failed'
         )
         const allSuccessful = failedResults.length === 0
+        logFinalResults({
+          runID: startedRun.runID,
+          runStatus: testRun.status,
+          runResult: testRun.result,
+          runURL: startedRun.url,
+          preflightTestCaseID: testRun.preflightTestCaseId,
+          preflightResult,
+          results: finalResults
+        })
 
         core.setOutput('success', allSuccessful)
         core.setOutput(
