@@ -13,7 +13,7 @@ jest.unstable_mockModule('@actions/core', () => core)
 
 // The module being tested should be imported dynamically. This ensures that the
 // mocks are used in place of any actual dependencies.
-const { run } = await import('../src/main.js')
+const { parseTestContextInput, run } = await import('../src/main.js')
 
 describe('main.ts', () => {
   beforeEach(() => {
@@ -50,6 +50,19 @@ describe('main.ts', () => {
     expect(core.setFailed).toHaveBeenNthCalledWith(
       1,
       'API token is required but was not provided'
+    )
+  })
+
+  it('Parses test-context lines and trims surrounding whitespace', () => {
+    expect(parseTestContextInput(' foo = bar \nzip=zop=zap ')).toEqual({
+      foo: 'bar',
+      zip: 'zop=zap'
+    })
+  })
+
+  it('Rejects test-context lines with an empty key', () => {
+    expect(() => parseTestContextInput(' =value ')).toThrow(
+      'test-context key must not be empty, got: "=value"'
     )
   })
 })
