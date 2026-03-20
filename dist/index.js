@@ -31690,6 +31690,28 @@ const parseTestSuiteIDs = (raw) => {
     }
     return parts.map((id) => normalizeToNumber(id, 'test-suite-id'));
 };
+const parseTestContextInput = (input) => {
+    if (!input) {
+        return undefined;
+    }
+    const testContext = {};
+    for (const line of input.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed)
+            continue;
+        const eqIndex = trimmed.indexOf('=');
+        if (eqIndex === -1) {
+            throw new Error(`test-context line must be in KEY=VALUE format, got: "${trimmed}"`);
+        }
+        const key = trimmed.substring(0, eqIndex).trim();
+        const value = trimmed.substring(eqIndex + 1).trim();
+        if (!key) {
+            throw new Error(`test-context key must not be empty, got: "${trimmed}"`);
+        }
+        testContext[key] = value;
+    }
+    return Object.keys(testContext).length > 0 ? testContext : undefined;
+};
 const buildGithubMetadata = (commitSHAInput) => {
     const pullRequest = githubExports.context.payload.pull_request;
     const commitSHA = commitSHAInput || process.env.GITHUB_SHA || githubExports.context.sha;
@@ -31814,24 +31836,9 @@ async function run() {
         const preflightTestCaseID = preflightTestCaseIdInput
             ? normalizeToNumber(preflightTestCaseIdInput, 'preflight-test-case-id')
             : undefined;
-        let testContext;
-        if (testContextInput) {
-            testContext = {};
-            for (const line of testContextInput.split(/\n|\\n/)) {
-                const trimmed = line.trim();
-                if (!trimmed)
-                    continue;
-                const eqIndex = trimmed.indexOf('=');
-                if (eqIndex === -1) {
-                    throw new Error(`test-context line must be in KEY=VALUE format, got: "${trimmed}"`);
-                }
-                const key = trimmed.substring(0, eqIndex).trim();
-                const value = trimmed.substring(eqIndex + 1);
-                testContext[key] = value;
-            }
-            if (Object.keys(testContext).length === 0) {
-                testContext = undefined;
-            }
+        const testContext = parseTestContextInput(testContextInput);
+        if (testContext) {
+            coreExports.info(`testContext: ${JSON.stringify(testContext)}`);
         }
         const metadata = buildGithubMetadata(commitSHAInput);
         const commitSHA = commitSHAInput || (typeof metadata.sha === 'string' ? metadata.sha : '');

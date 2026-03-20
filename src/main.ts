@@ -37,6 +37,41 @@ const parseTestSuiteIDs = (raw: string): number[] => {
   return parts.map((id) => normalizeToNumber(id, 'test-suite-id'))
 }
 
+export const parseTestContextInput = (
+  input: string
+): Record<string, string> | undefined => {
+  if (!input) {
+    return undefined
+  }
+
+  const testContext: Record<string, string> = {}
+
+  for (const line of input.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    const eqIndex = trimmed.indexOf('=')
+    if (eqIndex === -1) {
+      throw new Error(
+        `test-context line must be in KEY=VALUE format, got: "${trimmed}"`
+      )
+    }
+
+    const key = trimmed.substring(0, eqIndex).trim()
+    const value = trimmed.substring(eqIndex + 1).trim()
+
+    if (!key) {
+      throw new Error(
+        `test-context key must not be empty, got: "${trimmed}"`
+      )
+    }
+
+    testContext[key] = value
+  }
+
+  return Object.keys(testContext).length > 0 ? testContext : undefined
+}
+
 const buildGithubMetadata = (
   commitSHAInput: string
 ): Record<string, unknown> => {
@@ -255,25 +290,8 @@ export async function run(): Promise<void> {
       ? normalizeToNumber(preflightTestCaseIdInput, 'preflight-test-case-id')
       : undefined
 
-    let testContext: Record<string, unknown> | undefined
-    if (testContextInput) {
-      testContext = {}
-      for (const line of testContextInput.split(/\n|\\n/)) {
-        const trimmed = line.trim()
-        if (!trimmed) continue
-        const eqIndex = trimmed.indexOf('=')
-        if (eqIndex === -1) {
-          throw new Error(
-            `test-context line must be in KEY=VALUE format, got: "${trimmed}"`
-          )
-        }
-        const key = trimmed.substring(0, eqIndex).trim()
-        const value = trimmed.substring(eqIndex + 1)
-        testContext[key] = value
-      }
-      if (Object.keys(testContext).length === 0) {
-        testContext = undefined
-      }
+    const testContext = parseTestContextInput(testContextInput)
+    if (testContext) {
       core.info(`testContext: ${JSON.stringify(testContext)}`)
     }
 
