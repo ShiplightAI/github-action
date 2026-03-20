@@ -61,9 +61,7 @@ export const parseTestContextInput = (
     const value = trimmed.substring(eqIndex + 1).trim()
 
     if (!key) {
-      throw new Error(
-        `test-context key must not be empty, got: "${trimmed}"`
-      )
+      throw new Error(`test-context key must not be empty, got: "${trimmed}"`)
     }
 
     testContext[key] = value
