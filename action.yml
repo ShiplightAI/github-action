@@ -1,5 +1,7 @@
 name: shiplight-runner
-description: Use This GitHub Action to run tests on https://app.shiplight.ai
+description:
+  Run Shiplight end-to-end tests in CI. AI-driven browser tests that self-heal,
+  with results commented on every pull request.
 author: Shiplight AI
 
 branding:
